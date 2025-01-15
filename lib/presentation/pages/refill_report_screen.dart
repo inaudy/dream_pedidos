@@ -1,4 +1,6 @@
+import 'package:dream_pedidos/blocs/cubit/item_selection_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '/models/stock_item.dart';
 import '/services/repositories/stock_repository.dart';
 
@@ -42,7 +44,7 @@ class RefillReportPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           vertical: 8.0, horizontal: 16.0),
                       child: Text(
-                        category,
+                        category.isEmpty ? 'Uncategorized' : category,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -52,14 +54,39 @@ class RefillReportPage extends StatelessWidget {
                     ...items.map((item) {
                       final refillQuantity =
                           item.maximumLevel - item.actualStock;
-                      return ListTile(
-                        title: Text(item.itemName),
-                        subtitle: Text(
-                            'Actual: ${item.actualStock}, Max: ${item.maximumLevel}, Min: ${item.minimumLevel}'),
-                        trailing: Text('Reponer: $refillQuantity'),
+                      return BlocBuilder<ItemSelectionCubit,
+                          ItemSelectionState>(
+                        builder: (context, state) {
+                          final isSelected = state.selectedItems.contains(item);
+                          return GestureDetector(
+                            child: ListTile(
+                              tileColor: isSelected
+                                  ? Colors.green.withOpacity(0.2)
+                                  : null,
+                              title: Text(
+                                item.itemName,
+                                style: const TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text(
+                                  'Actual: ${item.actualStock}\nMin: ${item.minimumLevel}\nMax: ${item.maximumLevel}'),
+                              trailing: Text(
+                                'Cant: $refillQuantity',
+                                style: const TextStyle(
+                                    fontSize: 15, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            onTap: () => context
+                                .read<ItemSelectionCubit>()
+                                .toggleItemSelection(item),
+                          );
+                        },
                       );
-                    }).toList(),
-                    const Divider(), // Divider between categories
+                    }),
+                    const Divider(
+                      color: Colors.black45, // Main divider after each category
+                      thickness: 1,
+                    ),
                   ],
                 );
               }).toList(),
@@ -81,8 +108,7 @@ class RefillReportPage extends StatelessWidget {
     // Group by category
     final Map<String, List<StockItem>> categorized = {};
     for (var item in refillItems) {
-      final category =
-          item.categorie ?? 'Uncategorized'; // Use a default category if null
+      final category = item.categorie; // Use a default category if null
       if (!categorized.containsKey(category)) {
         categorized[category] = [];
       }
