@@ -1,4 +1,4 @@
-part of 'sales_data_bloc.dart';
+/*part of 'sales_data_bloc.dart';
 
 abstract class SalesDataState extends Equatable {
   @override
@@ -28,3 +28,4 @@ class SalesDataError extends SalesDataState {
   @override
   List<Object?> get props => [error];
 }
+*/

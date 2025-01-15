@@ -1,4 +1,5 @@
 // stock_bloc.dart
+import 'package:dream_pedidos/utils/event_bus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'stock_event.dart';
 import 'stock_state.dart';
@@ -11,6 +12,11 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     on<LoadStockEvent>(_onLoadStock);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
     on<SyncStockEvent>(_onSyncStock);
+    eventBus.stream.listen((event) {
+      if (event == 'stock_updated') {
+        add(LoadStockEvent()); // Trigger reload
+      }
+    });
   }
 
   /// Handle stock synchronization event
@@ -37,7 +43,6 @@ class StockBloc extends Bloc<StockEvent, StockState> {
       LoadStockEvent event, Emitter<StockState> emit) async {
     emit(StockLoading());
     try {
-      print('load stock');
       final stockItems = await stockRepository.getAllStockItems();
       emit(StockLoaded(stockItems));
     } catch (error) {
@@ -50,7 +55,7 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     emit(StockLoading()); // Emit loading state during deletion
     try {
       await stockRepository.deleteAllStockItems();
-      emit(StockLoaded([])); // Emit empty list after deletion
+      emit(StockLoaded(const [])); // Emit empty list after deletion
     } catch (error) {
       emit(StockError(error.toString()));
     }

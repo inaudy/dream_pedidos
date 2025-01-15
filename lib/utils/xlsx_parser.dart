@@ -53,28 +53,19 @@ class XLSXParser {
     if (value is TextCellValue) {
       value = value.value;
     }
-
     // Now handle the value as a String
     String date = value.toString();
 
-    if (date is String) {
-      try {
-        // Adjust the DateFormat to match the MM/dd/yyyy HH:mm format
-        return DateFormat("MM/dd/yyyy HH:mm")
-            .parseStrict(date); // Adjust format as needed
-      } catch (e) {
-        // Handle other formats or fallback
-        return DateTime.now();
-      }
-    } else if (value is int) {
-      // Excel serial date number
-      return DateTime(1900).add(Duration(days: value - 2));
-    } else if (value is double) {
-      // Excel serial date as a double
-      return DateTime(1900)
-          .add(Duration(milliseconds: (value * 86400000).toInt() - 86400000));
+    try {
+      print(DateFormat("dd/MM/yyyy HH:mm").parse(date));
+      // Adjust the DateFormat to match the MM/dd/yyyy HH:mm format
+      return DateFormat("dd/MM/yyyy HH:mm")
+          .parse(date); // Adjust format as needed
+    } catch (e) {
+      // Handle other formats or fallback
+      print(e);
+      return DateTime.parse(date);
     }
     // Default to current date if unable to parse
-    return DateTime.now();
   }
 }

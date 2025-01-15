@@ -9,7 +9,6 @@ class FileUploadEvent extends FileEvent {
   final String filePath;
 
   FileUploadEvent(this.filePath);
-
   @override
   List<Object?> get props => [filePath];
 }

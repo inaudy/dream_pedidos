@@ -12,7 +12,6 @@ class StockRepository {
   StockRepository._internal();
 
   Future<Database> get database async {
-    print('getdatabase');
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;

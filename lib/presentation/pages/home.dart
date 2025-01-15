@@ -1,16 +1,18 @@
-import 'package:dream_pedidos/blocs/cubit/bottom_Nav_Cubit.dart';
+import 'package:dream_pedidos/blocs/cubit/bottom_nav_cubit.dart';
 import 'package:dream_pedidos/presentation/pages/refill_report_screen.dart';
 import 'package:dream_pedidos/presentation/pages/stock_upload_screen.dart';
-import 'package:dream_pedidos/presentation/pages/upload_screen.dart';
+import 'package:dream_pedidos/presentation/pages/upload_sales_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomePage extends StatelessWidget {
   final List<Widget> _pages = [
-    UploadPage(),
-    StockManagePage(),
-    RefillReportPage(), // Placeholder for another page, e.g., RefillReportPage
+    const UploadSalesPage(),
+    const StockManagePage(),
+    RefillReportPage(),
   ];
+
+  HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {

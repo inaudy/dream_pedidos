@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:dream_pedidos/models/stock_item.dart';
-
 import '/models/sales_data.dart';
-import 'csv_parser.dart';
 import 'xlsx_parser.dart';
 
 class FileParser {
@@ -11,9 +9,7 @@ class FileParser {
     final file = File(filePath);
     final extension = file.path.split('.').last.toLowerCase();
 
-    if (extension == 'csv') {
-      return await CSVParser.parseCSV(file);
-    } else if (extension == 'xlsx') {
+    if (extension == 'xlsx') {
       return await XLSXParser.parseSalesXLSX(file);
     } else {
       throw Exception('Unsupported file type: $extension');
@@ -21,16 +17,24 @@ class FileParser {
   }
 
   static List<SalesData> sumSales(List<SalesData> salesData) {
-    // Step 1: Create a Map to store the summed sales by itemName
-    Map<String, double> salesMap = {};
+    // Step 1: Create a Map to store the summed sales and the most recent date by itemName
+    Map<String, Map<String, dynamic>> salesMap = {};
 
     for (var data in salesData) {
       if (salesMap.containsKey(data.itemName)) {
-        // Add the sales volume if the item already exists in the map
-        salesMap[data.itemName] = salesMap[data.itemName]! + data.salesVolume;
+        // Update the sales volume
+        salesMap[data.itemName]!['salesVolume'] += data.salesVolume;
+
+        // Keep the most recent date
+        if (data.date.isAfter(salesMap[data.itemName]!['date'])) {
+          salesMap[data.itemName]!['date'] = data.date;
+        }
       } else {
-        // Add the item to the map if it's not already there
-        salesMap[data.itemName] = data.salesVolume;
+        // Add new item with salesVolume and date
+        salesMap[data.itemName] = {
+          'salesVolume': data.salesVolume,
+          'date': data.date,
+        };
       }
     }
 
@@ -38,8 +42,8 @@ class FileParser {
     return salesMap.entries.map((entry) {
       return SalesData(
         itemName: entry.key,
-        salesVolume: entry.value,
-        date: DateTime.now(), // You can use a specific date here if needed
+        salesVolume: entry.value['salesVolume'] as double,
+        date: entry.value['date'] as DateTime,
       );
     }).toList();
   }

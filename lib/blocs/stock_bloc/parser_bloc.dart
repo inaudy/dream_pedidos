@@ -1,11 +1,11 @@
 // stock_upload_bloc.dart
 import 'dart:async';
-import 'package:dream_pedidos/blocs/stock_bloc/load_stock_event.dart';
-import 'package:dream_pedidos/blocs/stock_bloc/load_stock_state.dart';
+import 'package:dream_pedidos/blocs/stock_bloc/parser_event.dart';
+import 'package:dream_pedidos/blocs/stock_bloc/parser_state.dart';
 import 'package:dream_pedidos/services/repositories/stock_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '/models/stock_item.dart';
-import '/utils/file_parser.dart';
+import '../../utils/file_parser.dart';
 
 class StockUploadBloc extends Bloc<StockUploadEvent, StockUploadState> {
   final StockRepository stockRepository;

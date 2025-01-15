@@ -8,19 +8,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class StockManagePage extends StatelessWidget {
-  const StockManagePage({Key? key}) : super(key: key);
+  const StockManagePage({super.key});
 
   /// Method to delete all stock data
-  void _deleteAllData(BuildContext context) {
-    context.read<StockBloc>().add(DeleteAllStockEvent());
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Todos los datos de stock borrados')),
-    );
-    context.read<StockBloc>().add(LoadStockEvent());
+  void _deleteAllData(StockBloc stockBloc) {
+    stockBloc.add(DeleteAllStockEvent());
+    stockBloc.add(LoadStockEvent());
   }
 
   /// Method to upload data from a file
-  Future<void> _uploadFile(BuildContext context) async {
+  Future<void> _uploadFile(FileStockBloc fileStockBloc, StockBloc stockBloc,
+      ScaffoldMessengerState messenger) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv', 'xlsx'], // Limit to specific file types
@@ -28,11 +26,11 @@ class StockManagePage extends StatelessWidget {
 
     if (result != null && result.files.single.path != null) {
       final filePath = result.files.single.path!;
-      context.read<FileStockBloc>().add(FileStockUploadEvent(filePath));
-      context.read<StockBloc>().add(LoadStockEvent());
+      fileStockBloc.add(FileStockUploadEvent(filePath));
+      stockBloc.add(LoadStockEvent());
     } else {
       // If user cancels or no file is selected
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('No file selected')),
       );
     }
@@ -40,7 +38,11 @@ class StockManagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<StockBloc>().add(LoadStockEvent());
+    final stockBloc = context.read<StockBloc>();
+    final fileStockBloc = context.read<FileStockBloc>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    stockBloc.add(LoadStockEvent());
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -50,13 +52,20 @@ class StockManagePage extends StatelessWidget {
             Row(
               children: [
                 ElevatedButton.icon(
-                  onPressed: () => _uploadFile(context),
+                  onPressed: () =>
+                      _uploadFile(fileStockBloc, stockBloc, messenger),
                   icon: const Icon(Icons.upload_file),
-                  label: const Text('Nueva data stocks'),
+                  label: const Text('Nuevos stocks'),
                 ),
                 const SizedBox(width: 20),
                 ElevatedButton.icon(
-                  onPressed: () => _deleteAllData(context),
+                  onPressed: () {
+                    _deleteAllData(stockBloc);
+                    messenger.showSnackBar(
+                      const SnackBar(
+                          content: Text('Todos los datos de stock borrados')),
+                    );
+                  },
                   icon: const Icon(Icons.delete),
                   label: const Text('Todos datos'),
                 ),
@@ -96,8 +105,11 @@ class StockManagePage extends StatelessWidget {
       itemBuilder: (context, index) {
         final data = stockData[index];
         return ListTile(
-          leading: const Icon(Icons.inventory),
-          title: Text(data.itemName),
+          //leading: const Icon(Icons.inventory),
+          title: Text(
+            data.itemName,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
           subtitle: Text(
             'Actual Stock: ${data.actualStock}\nMin: ${data.minimumLevel}\nMax: ${data.maximumLevel}',
           ),

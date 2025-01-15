@@ -1,4 +1,4 @@
-part of 'sales_data_bloc.dart';
+/*part of 'sales_data_bloc.dart';
 
 abstract class SalesDataEvent extends Equatable {
   @override
@@ -23,3 +23,4 @@ class FetchSalesDataEvent extends SalesDataEvent {
   @override
   List<Object?> get props => [salesPointId, date];
 }
+*/
