@@ -44,12 +44,16 @@ class StockManagePage extends StatelessWidget {
 
     stockBloc.add(LoadStockEvent());
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Stocks'),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
+            /*Row(
               children: [
                 ElevatedButton.icon(
                   onPressed: () =>
@@ -70,7 +74,7 @@ class StockManagePage extends StatelessWidget {
                   label: const Text('Todos datos'),
                 ),
               ],
-            ),
+            ),*/
             const SizedBox(height: 20),
             Expanded(
               child: BlocBuilder<StockBloc, StockState>(

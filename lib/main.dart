@@ -1,9 +1,11 @@
 import 'package:dream_pedidos/blocs/cubit/bottom_nav_cubit.dart';
 import 'package:dream_pedidos/blocs/cubit/item_selection_cubit.dart';
 import 'package:dream_pedidos/blocs/file_bloc/file_bloc.dart';
+import 'package:dream_pedidos/blocs/file_bloc/file_escandallos_bloc.dart';
 import 'package:dream_pedidos/blocs/file_bloc/file_stock_bloc.dart';
 import 'package:dream_pedidos/blocs/stock_bloc/stock_bloc.dart';
 import 'package:dream_pedidos/presentation/pages/home.dart';
+import 'package:dream_pedidos/services/repositories/escandallo_repository.dart';
 import 'package:dream_pedidos/services/repositories/stock_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,7 +28,11 @@ class MyApp extends StatelessWidget {
             create: (context) => FileStockBloc(StockRepository()),
           ),
           BlocProvider(
-            create: (context) => StockBloc(StockRepository()),
+            create: (context) => FileEscandallosBloc(ConversionRepository()),
+          ),
+          BlocProvider(
+            create: (context) =>
+                StockBloc(StockRepository(), ConversionRepository()),
           ),
           BlocProvider(
             create: (context) => FileBloc(),

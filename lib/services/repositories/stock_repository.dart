@@ -29,14 +29,47 @@ class StockRepository {
           CREATE TABLE stock (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             item_name TEXT NOT NULL,
-            actual_stock INTEGER NOT NULL,
-            minimum_level INTEGER NOT NULL,
-            maximum_level INTEGER NOT NULL,
-            categorie TEXT NOT NULL
+            actual_stock REAL NOT NULL,
+            minimum_level REAL NOT NULL,
+            maximum_level REAL NOT NULL,
+            category TEXT NOT NULL,
+            traspaso TEXT
+          )
+        ''');
+
+        // Create backup stock table
+        await db.execute('''
+          CREATE TABLE stock_backup (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_name TEXT NOT NULL,
+            actual_stock REAL NOT NULL,
+            minimum_level INTREALEGER NOT NULL,
+            maximum_level REAL NOT NULL,
+            category TEXT NOT NULL,
+            traspaso TEXT
           )
         ''');
       },
     );
+  }
+
+  Future<void> resetStockFromBackup() async {
+    final db = await database;
+
+    await db.transaction((txn) async {
+      // Clear current stock table
+      await txn.delete('stock');
+
+      // Restore from backup
+      final backupItems = await txn.query('stock_backup');
+      for (final item in backupItems) {
+        await txn.insert(
+          'stock',
+          item,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
   }
 
   /// Insert a single stock item into the database.
@@ -52,6 +85,8 @@ class StockRepository {
   /// Insert multiple stock items at once.
   Future<void> addStockItems(List<StockItem> items) async {
     final db = await database;
+
+    // Start a batch operation for inserting items into the stock table.
     final batch = db.batch();
     for (var item in items) {
       batch.insert(
@@ -61,6 +96,20 @@ class StockRepository {
       );
     }
     await batch.commit(noResult: true);
+
+    // Back up the stock table into the stock_backup table in a batch.
+    final backupItems = await db.query('stock');
+    if (backupItems.isNotEmpty) {
+      final backupBatch = db.batch();
+      for (final item in backupItems) {
+        backupBatch.insert(
+          'stock_backup',
+          item,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await backupBatch.commit(noResult: true);
+    }
   }
 
   /// Retrieve all stock items from the database.

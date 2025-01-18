@@ -1,4 +1,4 @@
-// stock_bloc.dart
+import 'package:dream_pedidos/services/repositories/escandallo_repository.dart';
 import 'package:dream_pedidos/utils/event_bus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'stock_event.dart';
@@ -7,8 +7,11 @@ import 'package:dream_pedidos/services/repositories/stock_repository.dart';
 
 class StockBloc extends Bloc<StockEvent, StockState> {
   final StockRepository stockRepository;
+  final ConversionRepository
+      conversionRepository; // Repository to handle conversions
 
-  StockBloc(this.stockRepository) : super(StockInitial()) {
+  StockBloc(this.stockRepository, this.conversionRepository)
+      : super(StockInitial()) {
     on<LoadStockEvent>(_onLoadStock);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
     on<SyncStockEvent>(_onSyncStock);
@@ -19,7 +22,7 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     });
   }
 
-  /// Handle stock synchronization event
+  /// Handle stock synchronization event with conversion logic
   Future<void> _onSyncStock(
       SyncStockEvent event, Emitter<StockState> emit) async {
     emit(StockLoading());
@@ -29,7 +32,11 @@ class StockBloc extends Bloc<StockEvent, StockState> {
           .map((sale) =>
               {'item_name': sale.itemName, 'sales_volume': sale.salesVolume})
           .toList();
-      await stockRepository.bulkUpdateStock(salesData);
+
+      // Apply conversion if available for each item in sales data
+      final updatedSalesData = await _applyConversions(salesData);
+
+      await stockRepository.bulkUpdateStock(updatedSalesData);
 
       // Load updated stock items after synchronization
       final updatedStock = await stockRepository.getAllStockItems();
@@ -54,10 +61,39 @@ class StockBloc extends Bloc<StockEvent, StockState> {
       DeleteAllStockEvent event, Emitter<StockState> emit) async {
     emit(StockLoading()); // Emit loading state during deletion
     try {
-      await stockRepository.deleteAllStockItems();
+      await stockRepository.resetStockFromBackup();
       emit(StockLoaded(const [])); // Emit empty list after deletion
     } catch (error) {
       emit(StockError(error.toString()));
     }
+  }
+
+  // Apply conversion size to each item if it exists in the conversions table
+  Future<List<Map<String, dynamic>>> _applyConversions(
+      List<Map<String, dynamic>> salesData) async {
+    final updatedSalesData = <Map<String, dynamic>>[];
+
+    for (var sale in salesData) {
+      final itemName = sale['item_name'] as String;
+
+      // Check if a conversion exists for the item
+      final conversion =
+          await conversionRepository.getConversionByItemName(itemName);
+
+      if (conversion != null) {
+        // If conversion exists, adjust the sales volume by conversion size
+        final convertedSalesVolume =
+            sale['sales_volume'] * conversion.conversionSize;
+        updatedSalesData.add({
+          'item_name': itemName,
+          'sales_volume': convertedSalesVolume,
+        });
+      } else {
+        // If no conversion exists, keep the original sales volume
+        updatedSalesData.add(sale);
+      }
+    }
+
+    return updatedSalesData;
   }
 }

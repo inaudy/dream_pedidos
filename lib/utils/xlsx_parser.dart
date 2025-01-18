@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dream_pedidos/models/conversion.dart';
 import 'package:dream_pedidos/models/stock_item.dart';
 import 'package:excel/excel.dart';
 import '/models/sales_data.dart';
@@ -26,6 +27,25 @@ class XLSXParser {
     }).toList();
   }
 
+  static Future<List<Conversion>> parseConversion(File file) async {
+    final bytes = await file.readAsBytes();
+    final excel = Excel.decodeBytes(bytes);
+
+    // Get the first sheet
+    final sheet = excel.tables[excel.tables.keys.first];
+    if (sheet == null) {
+      throw Exception('No data found in the XLSX file');
+    }
+
+    // Skip the first row (headers) and map to SalesData model
+    return sheet.rows.skip(1).map((row) {
+      return Conversion(
+        itemName: row[0]?.value.toString() ?? '',
+        conversionSize: double.tryParse(row[1]?.value.toString() ?? '0') ?? 0,
+      );
+    }).toList();
+  }
+
   static Future<List<StockItem>> parseStockXLSX(File file) async {
     final bytes = await file.readAsBytes();
     final excel = Excel.decodeBytes(bytes);
@@ -39,11 +59,13 @@ class XLSXParser {
     // Skip the header row and map each row to a StockItem
     return sheet.rows.skip(1).map((row) {
       return StockItem(
-          itemName: row[0]?.value.toString() ?? '',
-          actualStock: int.tryParse(row[1]?.value.toString() ?? '0') ?? 0,
-          minimumLevel: int.tryParse(row[2]?.value.toString() ?? '0') ?? 0,
-          maximumLevel: int.tryParse(row[3]?.value.toString() ?? '0') ?? 0,
-          categorie: row[4]?.value.toString() ?? '0');
+        itemName: row[0]?.value.toString() ?? '',
+        actualStock: double.tryParse(row[1]?.value.toString() ?? '0') ?? 0,
+        minimumLevel: double.tryParse(row[2]?.value.toString() ?? '0') ?? 0,
+        maximumLevel: double.tryParse(row[3]?.value.toString() ?? '0') ?? 0,
+        category: row[4]?.value.toString() ?? '0',
+        traspaso: row[5]?.value.toString() ?? '',
+      );
     }).toList();
   }
 

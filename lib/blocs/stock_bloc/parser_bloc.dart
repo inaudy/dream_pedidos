@@ -28,10 +28,11 @@ class StockUploadBloc extends Bloc<StockUploadEvent, StockUploadState> {
       final stockItemList = stockItems.map((data) {
         return StockItem(
             itemName: data.itemName,
-            actualStock: data.salesVolume.toInt(),
+            actualStock: data.salesVolume,
             minimumLevel: 10, // Default minimum level
             maximumLevel: 100, // Default maximum level
-            categorie: '');
+            category: '',
+            traspaso: '');
       }).toList();
 
       emit(StockUploadSuccess(stockItemList));

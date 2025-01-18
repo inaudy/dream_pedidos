@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dream_pedidos/models/conversion.dart';
 import 'package:dream_pedidos/models/stock_item.dart';
 import '/models/sales_data.dart';
 import 'xlsx_parser.dart';
@@ -21,17 +22,19 @@ class FileParser {
     Map<String, Map<String, dynamic>> salesMap = {};
 
     for (var data in salesData) {
-      if (salesMap.containsKey(data.itemName)) {
+      if (salesMap.containsKey(data.itemName.toUpperCase())) {
         // Update the sales volume
-        salesMap[data.itemName]!['salesVolume'] += data.salesVolume;
+        salesMap[data.itemName.toUpperCase()]!['salesVolume'] +=
+            data.salesVolume;
 
         // Keep the most recent date
-        if (data.date.isAfter(salesMap[data.itemName]!['date'])) {
-          salesMap[data.itemName]!['date'] = data.date;
+
+        if (data.date.isAfter(salesMap[data.itemName.toUpperCase()]!['date'])) {
+          salesMap[data.itemName.toUpperCase()]!['date'] = data.date;
         }
       } else {
         // Add new item with salesVolume and date
-        salesMap[data.itemName] = {
+        salesMap[data.itemName.toUpperCase()] = {
           'salesVolume': data.salesVolume,
           'date': data.date,
         };
@@ -54,6 +57,17 @@ class FileParser {
 
     if (extension == 'xlsx') {
       return await XLSXParser.parseStockXLSX(file);
+    } else {
+      throw Exception('Unsupported file type: $extension');
+    }
+  }
+
+  static Future<List<Conversion>> parseConversionFile(String filePath) async {
+    final file = File(filePath);
+    final extension = file.path.split('.').last.toLowerCase();
+
+    if (extension == 'xlsx') {
+      return await XLSXParser.parseConversion(file);
     } else {
       throw Exception('Unsupported file type: $extension');
     }
