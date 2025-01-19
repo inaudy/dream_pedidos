@@ -5,6 +5,7 @@ import 'package:dream_pedidos/blocs/file_bloc/file_escandallos_bloc.dart';
 import 'package:dream_pedidos/blocs/file_bloc/file_stock_bloc.dart';
 import 'package:dream_pedidos/blocs/stock_bloc/stock_bloc.dart';
 import 'package:dream_pedidos/presentation/pages/home.dart';
+import 'package:dream_pedidos/services/repositories/cocktail_recipe_repository.dart';
 import 'package:dream_pedidos/services/repositories/escandallo_repository.dart';
 import 'package:dream_pedidos/services/repositories/stock_repository.dart';
 import 'package:flutter/material.dart';
@@ -28,11 +29,12 @@ class MyApp extends StatelessWidget {
             create: (context) => FileStockBloc(StockRepository()),
           ),
           BlocProvider(
-            create: (context) => FileEscandallosBloc(ConversionRepository()),
+            create: (context) =>
+                FileEscandallosBloc(CocktailRecipeRepository()),
           ),
           BlocProvider(
             create: (context) =>
-                StockBloc(StockRepository(), ConversionRepository()),
+                StockBloc(StockRepository(), CocktailRecipeRepository()),
           ),
           BlocProvider(
             create: (context) => FileBloc(),

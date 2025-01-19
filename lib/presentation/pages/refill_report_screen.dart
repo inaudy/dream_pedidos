@@ -94,7 +94,7 @@ class RefillReportPage extends StatelessWidget {
                       );
                     }),
                     const Divider(
-                      color: Colors.black45, // Main divider after each category
+                      color: Colors.black45,
                       thickness: 1,
                     ),
                   ],
@@ -104,9 +104,23 @@ class RefillReportPage extends StatelessWidget {
           }
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _bulkUpdateStock(context),
-        child: const Icon(Icons.send),
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 6.0,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end, // Align to the right
+          children: [
+            TextButton.icon(
+              icon: const Icon(Icons.send),
+              label: const Text('Enviar'), // Add the text next to the icon
+              onPressed: () => _bulkUpdateStock(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.blue, // Icon and text color
+              ),
+            ),
+            const SizedBox(width: 16), // Add some padding at the end
+          ],
+        ),
       ),
     );
   }
@@ -114,15 +128,13 @@ class RefillReportPage extends StatelessWidget {
   Future<Map<String, List<StockItem>>> _getCategorizedRefillReport() async {
     final allStockItems = await stockRepository.getAllStockItems();
 
-    // Filter items that need refilling
     final refillItems = allStockItems.where((item) {
       return item.actualStock < item.minimumLevel;
     });
 
-    // Group by category
     final Map<String, List<StockItem>> categorized = {};
     for (var item in refillItems) {
-      final category = item.category; // Use a default category if null
+      final category = item.category;
       if (!categorized.containsKey(category)) {
         categorized[category] = [];
       }
@@ -144,13 +156,11 @@ class RefillReportPage extends StatelessWidget {
     }
 
     for (final item in selectedItems) {
-      final newStock = item.maximumLevel; // Set to max stock
+      final newStock = item.maximumLevel;
       final updatedItem = item.copyWith(actualStock: newStock);
       await stockRepository.updateStockItem(updatedItem);
     }
 
-    // Clear the selection and show a success message
-    //cubit.clearSelection();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
           content: Text('Stock actualizado para los items seleccionados')),

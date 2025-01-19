@@ -37,13 +37,12 @@ class StockRepository {
           )
         ''');
 
-        // Create backup stock table
         await db.execute('''
           CREATE TABLE stock_backup (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             item_name TEXT NOT NULL,
             actual_stock REAL NOT NULL,
-            minimum_level INTREALEGER NOT NULL,
+            minimum_level REAL NOT NULL,
             maximum_level REAL NOT NULL,
             category TEXT NOT NULL,
             traspaso TEXT
@@ -53,6 +52,7 @@ class StockRepository {
     );
   }
 
+  /// Reset stock from the backup table
   Future<void> resetStockFromBackup() async {
     final db = await database;
 
@@ -72,7 +72,7 @@ class StockRepository {
     });
   }
 
-  /// Insert a single stock item into the database.
+  /// Add a single stock item
   Future<int> addStockItem(StockItem item) async {
     final db = await database;
     return await db.insert(
@@ -82,11 +82,10 @@ class StockRepository {
     );
   }
 
-  /// Insert multiple stock items at once.
+  /// Add multiple stock items in bulk
   Future<void> addStockItems(List<StockItem> items) async {
     final db = await database;
 
-    // Start a batch operation for inserting items into the stock table.
     final batch = db.batch();
     for (var item in items) {
       batch.insert(
@@ -97,22 +96,19 @@ class StockRepository {
     }
     await batch.commit(noResult: true);
 
-    // Back up the stock table into the stock_backup table in a batch.
+    final backupBatch = db.batch();
     final backupItems = await db.query('stock');
-    if (backupItems.isNotEmpty) {
-      final backupBatch = db.batch();
-      for (final item in backupItems) {
-        backupBatch.insert(
-          'stock_backup',
-          item,
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-      await backupBatch.commit(noResult: true);
+    for (final item in backupItems) {
+      backupBatch.insert(
+        'stock_backup',
+        item,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     }
+    await backupBatch.commit(noResult: true);
   }
 
-  /// Retrieve all stock items from the database.
+  /// Retrieve all stock items
   Future<List<StockItem>> getAllStockItems() async {
     final db = await database;
     final result = await db.query('stock');
@@ -120,7 +116,7 @@ class StockRepository {
     return result.map((map) => StockItem.fromMap(map)).toList();
   }
 
-  /// Update stock based on sales volume.
+  /// Bulk update stock based on sales data
   Future<void> bulkUpdateStock(List<Map<String, dynamic>> salesData) async {
     final db = await database;
 
@@ -138,7 +134,7 @@ class StockRepository {
     });
   }
 
-  /// Update a stock item.
+  /// Update a single stock item
   Future<int> updateStockItem(StockItem item) async {
     final db = await database;
     return await db.update(
@@ -149,7 +145,7 @@ class StockRepository {
     );
   }
 
-  /// Delete a specific stock item by name.
+  /// Delete a single stock item by name
   Future<int> deleteStockItem(String itemName) async {
     final db = await database;
     return await db.delete(
@@ -159,7 +155,7 @@ class StockRepository {
     );
   }
 
-  /// Delete all stock items.
+  /// Delete all stock items
   Future<void> deleteAllStockItems() async {
     final db = await database;
     await db.delete('stock');

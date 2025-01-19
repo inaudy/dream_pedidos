@@ -1,4 +1,4 @@
-class Conversion {
+/*class Conversion {
   final String itemName;
   final double conversionSize;
 
@@ -23,3 +23,4 @@ class Conversion {
     );
   }
 }
+*/

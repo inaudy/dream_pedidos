@@ -1,4 +1,4 @@
-import 'package:dream_pedidos/services/repositories/escandallo_repository.dart';
+import 'package:dream_pedidos/services/repositories/cocktail_recipe_repository.dart';
 import 'package:dream_pedidos/utils/event_bus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'stock_event.dart';
@@ -7,38 +7,42 @@ import 'package:dream_pedidos/services/repositories/stock_repository.dart';
 
 class StockBloc extends Bloc<StockEvent, StockState> {
   final StockRepository stockRepository;
-  final ConversionRepository
-      conversionRepository; // Repository to handle conversions
+  final CocktailRecipeRepository cocktailRecipeRepository;
 
-  StockBloc(this.stockRepository, this.conversionRepository)
+  StockBloc(this.stockRepository, this.cocktailRecipeRepository)
       : super(StockInitial()) {
     on<LoadStockEvent>(_onLoadStock);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
     on<SyncStockEvent>(_onSyncStock);
+
+    // Listen for stock updates and reload when needed
     eventBus.stream.listen((event) {
       if (event == 'stock_updated') {
-        add(LoadStockEvent()); // Trigger reload
+        add(LoadStockEvent());
       }
     });
   }
 
-  /// Handle stock synchronization event with conversion logic
+  /// Handle stock synchronization event
   Future<void> _onSyncStock(
       SyncStockEvent event, Emitter<StockState> emit) async {
     emit(StockLoading());
     try {
-      // Perform bulk stock update using sales data
+      // Transform sales data to ingredient-based deductions
       final salesData = event.salesData
-          .map((sale) =>
-              {'item_name': sale.itemName, 'sales_volume': sale.salesVolume})
+          .map((sale) => {
+                'item_name': sale.itemName,
+                'sales_volume': sale.salesVolume,
+              })
           .toList();
 
-      // Apply conversion if available for each item in sales data
-      final updatedSalesData = await _applyConversions(salesData);
+      // Use cocktail recipes to convert sales to ingredient-based deductions
+      final updatedSalesData = await _applyCocktailConversions(salesData);
 
+      // Perform bulk stock updates
       await stockRepository.bulkUpdateStock(updatedSalesData);
 
-      // Load updated stock items after synchronization
+      // Load updated stock items
       final updatedStock = await stockRepository.getAllStockItems();
       emit(StockLoaded(updatedStock));
     } catch (e) {
@@ -46,6 +50,7 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     }
   }
 
+  /// Handle stock loading event
   Future<void> _onLoadStock(
       LoadStockEvent event, Emitter<StockState> emit) async {
     emit(StockLoading());
@@ -57,39 +62,41 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     }
   }
 
+  /// Handle stock deletion event
   Future<void> _onDeleteAllStock(
       DeleteAllStockEvent event, Emitter<StockState> emit) async {
-    emit(StockLoading()); // Emit loading state during deletion
+    emit(StockLoading());
     try {
-      await stockRepository.resetStockFromBackup();
-      emit(StockLoaded(const [])); // Emit empty list after deletion
+      await stockRepository.deleteAllStockItems();
+      emit(StockLoaded(const []));
     } catch (error) {
       emit(StockError(error.toString()));
     }
   }
 
-  // Apply conversion size to each item if it exists in the conversions table
-  Future<List<Map<String, dynamic>>> _applyConversions(
+  /// Convert sales data using cocktail recipes
+  Future<List<Map<String, dynamic>>> _applyCocktailConversions(
       List<Map<String, dynamic>> salesData) async {
     final updatedSalesData = <Map<String, dynamic>>[];
 
     for (var sale in salesData) {
       final itemName = sale['item_name'] as String;
+      final salesVolume = sale['sales_volume'] as double;
 
-      // Check if a conversion exists for the item
-      final conversion =
-          await conversionRepository.getConversionByItemName(itemName);
+      // Check if the item is a cocktail using CocktailRecipeRepository
+      final ingredients =
+          await cocktailRecipeRepository.getIngredientsByCocktail(itemName);
 
-      if (conversion != null) {
-        // If conversion exists, adjust the sales volume by conversion size
-        final convertedSalesVolume =
-            sale['sales_volume'] * conversion.conversionSize;
-        updatedSalesData.add({
-          'item_name': itemName,
-          'sales_volume': convertedSalesVolume,
-        });
+      if (ingredients.isNotEmpty) {
+        // Map each ingredient to its corresponding sales volume
+        for (var ingredient in ingredients) {
+          updatedSalesData.add({
+            'item_name': ingredient.ingredientName,
+            'sales_volume': salesVolume * ingredient.quantity,
+          });
+        }
       } else {
-        // If no conversion exists, keep the original sales volume
+        // If no ingredients found, keep the original item
         updatedSalesData.add(sale);
       }
     }

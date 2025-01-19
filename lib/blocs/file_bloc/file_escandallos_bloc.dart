@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
-import 'package:dream_pedidos/models/conversion.dart';
-import 'package:dream_pedidos/services/repositories/escandallo_repository.dart';
+import 'package:dream_pedidos/models/recipe_model.dart';
+import 'package:dream_pedidos/services/repositories/cocktail_recipe_repository.dart';
 import 'package:dream_pedidos/utils/event_bus.dart';
 import 'package:equatable/equatable.dart';
 import '../../utils/file_parser.dart';
@@ -10,19 +10,22 @@ part 'file_escandallos_state.dart';
 
 class FileEscandallosBloc
     extends Bloc<FileEscandallosEvent, FileEscandallosState> {
-  final ConversionRepository _conversionRepository;
-  FileEscandallosBloc(this._conversionRepository)
+  final CocktailRecipeRepository _cocktailRecipeRepository;
+
+  FileEscandallosBloc(this._cocktailRecipeRepository)
       : super(FileEscandallosInitial()) {
     on<FileEscandallosUploadEvent>((event, emit) async {
       emit(FileEscandallosLoading());
       try {
-        final conversionDataList =
-            await FileParser.parseConversionFile(event.filePath);
+        // Parse the cocktail recipe file
+        final cocktailRecipeList =
+            await FileParser.parseCocktailRecipeFile(event.filePath);
 
-        await _conversionRepository.addConversionItems(conversionDataList);
+        // Add the parsed recipes to the database
+        await _cocktailRecipeRepository.addCocktailRecipes(cocktailRecipeList);
 
-        emit(FileEscandallosUploadSuccess(conversionDataList));
-        eventBus.emit('stock_updated');
+        emit(FileEscandallosUploadSuccess(cocktailRecipeList));
+        eventBus.emit('recipes_updated');
       } catch (e) {
         emit(FileEscandallosUploadFailure(e.toString()));
       }
