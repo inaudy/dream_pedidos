@@ -44,10 +44,6 @@ class StockManagePage extends StatelessWidget {
 
     stockBloc.add(LoadStockEvent());
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Stocks'),
-        centerTitle: true,
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -87,7 +83,7 @@ class StockManagePage extends StatelessWidget {
                   } else if (state is StockError) {
                     return Center(
                       child: Text(
-                        'Error: ${state.error}',
+                        'Error: ${state.message}',
                         style: const TextStyle(color: Colors.red),
                       ),
                     );

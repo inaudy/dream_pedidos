@@ -1,40 +1,50 @@
-import 'package:bloc/bloc.dart';
-import '/models/stock_item.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import '/models/stock_item.dart';
 
-// Event for toggling item selection
-class ItemSelectionEvent extends Equatable {
-  final StockItem item;
-  const ItemSelectionEvent(this.item);
-
-  @override
-  List<Object> get props => [item];
-}
-
-// State for managing selected items
 class ItemSelectionState extends Equatable {
-  final Set<StockItem> selectedItems;
-  const ItemSelectionState(this.selectedItems);
+  final List<StockItem> selectedItems;
+  final String? message;
+
+  const ItemSelectionState({
+    this.selectedItems = const [],
+    this.message,
+  });
 
   @override
-  List<Object> get props => [selectedItems];
-
-  ItemSelectionState copyWith({Set<StockItem>? selectedItems}) {
-    return ItemSelectionState(selectedItems ?? this.selectedItems);
-  }
+  List<Object?> get props => [selectedItems, message];
 }
 
-// Cubit to manage selection of items
 class ItemSelectionCubit extends Cubit<ItemSelectionState> {
-  ItemSelectionCubit() : super(ItemSelectionState({}));
+  ItemSelectionCubit() : super(const ItemSelectionState());
 
+  /// Toggle the selection of a stock item
   void toggleItemSelection(StockItem item) {
-    final selectedItems = Set<StockItem>.from(state.selectedItems);
+    final selectedItems = List<StockItem>.from(state.selectedItems);
     if (selectedItems.contains(item)) {
       selectedItems.remove(item);
     } else {
       selectedItems.add(item);
     }
-    emit(state.copyWith(selectedItems: selectedItems));
+
+    emit(ItemSelectionState(
+      selectedItems: selectedItems,
+    ));
+  }
+
+  /// Clear all selected items and optionally set a success message
+  void clearSelection({String? message}) {
+    emit(ItemSelectionState(
+      selectedItems: [],
+      message: message,
+    ));
+  }
+
+  /// Set an error message
+  void setError(String error) {
+    emit(ItemSelectionState(
+      selectedItems: state.selectedItems,
+      message: error,
+    ));
   }
 }

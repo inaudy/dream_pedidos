@@ -2,8 +2,10 @@ import 'package:dream_pedidos/models/stock_item.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class StockState extends Equatable {
+  final String? message;
+  const StockState({this.message});
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [message];
 }
 
 class StockInitial extends StockState {}
@@ -13,17 +15,16 @@ class StockLoading extends StockState {}
 class StockLoaded extends StockState {
   final List<StockItem> stockItems;
 
-  StockLoaded(this.stockItems);
+  const StockLoaded(this.stockItems, {String? message})
+      : super(message: message);
 
   @override
-  List<Object?> get props => [stockItems];
+  List<Object?> get props => [stockItems, message];
 }
 
 class StockError extends StockState {
-  final String error;
-
-  StockError(this.error);
+  const StockError(String message) : super(message: message);
 
   @override
-  List<Object?> get props => [error];
+  List<Object?> get props => [message];
 }

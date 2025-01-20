@@ -43,6 +43,17 @@ class HomePage extends StatelessWidget {
             },
           ),
         ],
+        title: BlocBuilder<BottomNavcubit, int>(
+          builder: (context, state) {
+            final List<String> _appBarsTitle = [
+              'Actualizar Ventas',
+              'Stock Areca',
+              'Lista Pedidos '
+            ];
+            return Text(_appBarsTitle[state]); // Dynamically set the title
+          },
+        ),
+        centerTitle: true,
       ),
       drawer: Drawer(
         child: ListView(

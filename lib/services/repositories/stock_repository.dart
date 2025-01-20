@@ -57,18 +57,15 @@ class StockRepository {
     final db = await database;
 
     await db.transaction((txn) async {
-      // Clear current stock table
+      // Clear the current stock table
       await txn.delete('stock');
 
-      // Restore from backup
-      final backupItems = await txn.query('stock_backup');
-      for (final item in backupItems) {
-        await txn.insert(
-          'stock',
-          item,
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
+      // Copy all data from stock_backup to stock
+      await txn.rawInsert('''
+      INSERT INTO stock (item_name, actual_stock, minimum_level, maximum_level, category, traspaso)
+      SELECT item_name, actual_stock, minimum_level, maximum_level, category, traspaso
+      FROM stock_backup
+    ''');
     });
   }
 

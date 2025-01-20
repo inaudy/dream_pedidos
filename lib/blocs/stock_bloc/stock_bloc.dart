@@ -44,7 +44,10 @@ class StockBloc extends Bloc<StockEvent, StockState> {
 
       // Load updated stock items
       final updatedStock = await stockRepository.getAllStockItems();
-      emit(StockLoaded(updatedStock));
+      emit(StockLoaded(
+        updatedStock,
+        message: 'Stock synchronization completed successfully!',
+      ));
     } catch (e) {
       emit(StockError('Failed to synchronize stock: ${e.toString()}'));
     }
@@ -56,21 +59,28 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     emit(StockLoading());
     try {
       final stockItems = await stockRepository.getAllStockItems();
-      emit(StockLoaded(stockItems));
+      emit(StockLoaded(stockItems, message: 'Stock data loaded successfully.'));
     } catch (error) {
-      emit(StockError(error.toString()));
+      emit(StockError('Failed to load stock: ${error.toString()}'));
     }
   }
 
-  /// Handle stock deletion event
+  /// Handle stock deletion and restoration event
   Future<void> _onDeleteAllStock(
       DeleteAllStockEvent event, Emitter<StockState> emit) async {
     emit(StockLoading());
     try {
+      // Clear all stock items
       await stockRepository.deleteAllStockItems();
-      emit(StockLoaded(const []));
+
+      // Reset stock from backup
+      await stockRepository.resetStockFromBackup();
+
+      // Reload the stock items
+      final updatedStock = await stockRepository.getAllStockItems();
+      emit(StockLoaded(updatedStock, message: 'Stock reset completed.'));
     } catch (error) {
-      emit(StockError(error.toString()));
+      emit(StockError('Failed to reset stock: ${error.toString()}'));
     }
   }
 
