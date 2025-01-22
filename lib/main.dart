@@ -1,13 +1,12 @@
-import 'package:dream_pedidos/blocs/cubit/bottom_nav_cubit.dart';
-import 'package:dream_pedidos/blocs/cubit/item_selection_cubit.dart';
-import 'package:dream_pedidos/blocs/file_bloc/file_bloc.dart';
-import 'package:dream_pedidos/blocs/file_bloc/file_escandallos_bloc.dart';
-import 'package:dream_pedidos/blocs/file_bloc/file_stock_bloc.dart';
-import 'package:dream_pedidos/blocs/stock_bloc/stock_bloc.dart';
-import 'package:dream_pedidos/presentation/pages/home.dart';
-import 'package:dream_pedidos/services/repositories/cocktail_recipe_repository.dart';
-import 'package:dream_pedidos/services/repositories/escandallo_repository.dart';
-import 'package:dream_pedidos/services/repositories/stock_repository.dart';
+import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/recipe_parser_bloc/recipe_parser_bloc.dart';
+import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/sales_parser_bloc/sales_parser_bloc.dart';
+import 'package:dream_pedidos/core/features/stock_managment/presentation/cubit/bottom_nav_cubit.dart';
+import 'package:dream_pedidos/core/features/stock_managment/presentation/cubit/item_selection_cubit.dart';
+import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/stock_parser_bloc/file_stock_bloc.dart';
+import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/stock_bloc/stock_bloc.dart';
+import 'package:dream_pedidos/core/features/stock_managment/presentation/pages/home.dart';
+import 'package:dream_pedidos/core/features/stock_managment/data/repositories/cocktail_recipe_repository.dart';
+import 'package:dream_pedidos/core/features/stock_managment/data/repositories/stock_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -29,15 +28,14 @@ class MyApp extends StatelessWidget {
             create: (context) => FileStockBloc(StockRepository()),
           ),
           BlocProvider(
-            create: (context) =>
-                FileEscandallosBloc(CocktailRecipeRepository()),
+            create: (context) => RecipeParserBloc(CocktailRecipeRepository()),
           ),
           BlocProvider(
             create: (context) =>
                 StockBloc(StockRepository(), CocktailRecipeRepository()),
           ),
           BlocProvider(
-            create: (context) => FileBloc(),
+            create: (context) => SalesParserBloc(),
           ),
           BlocProvider(create: (context) => ItemSelectionCubit()),
           BlocProvider(create: (context) => BottomNavcubit())
