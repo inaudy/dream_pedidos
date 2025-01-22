@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
-import 'package:dream_pedidos/core/features/stock_managment/data/models/stock_item.dart';
-import 'package:dream_pedidos/core/features/stock_managment/data/repositories/stock_repository.dart';
+import 'package:dream_pedidos/data/models/stock_item.dart';
+import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 
 import 'package:equatable/equatable.dart';
 import '../../../data/datasources/external/file_parser.dart';

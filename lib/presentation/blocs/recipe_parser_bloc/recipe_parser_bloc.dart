@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
-import 'package:dream_pedidos/core/features/stock_managment/data/models/recipe_model.dart';
-import 'package:dream_pedidos/core/features/stock_managment/data/repositories/cocktail_recipe_repository.dart';
+import 'package:dream_pedidos/data/models/recipe_model.dart';
+import 'package:dream_pedidos/data/repositories/cocktail_recipe_repository.dart';
 
 import 'package:equatable/equatable.dart';
 import '../../../data/datasources/external/file_parser.dart';

@@ -1,4 +1,4 @@
-import 'package:dream_pedidos/core/features/stock_managment/data/models/recipe_model.dart';
+import 'package:dream_pedidos/data/models/recipe_model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 

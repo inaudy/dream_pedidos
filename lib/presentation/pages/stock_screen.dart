@@ -1,7 +1,7 @@
-import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/stock_bloc/stock_bloc.dart';
-import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/stock_bloc/stock_event.dart';
-import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/stock_bloc/stock_state.dart';
-import 'package:dream_pedidos/core/features/stock_managment/data/models/stock_item.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_state.dart';
+import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -10,9 +10,7 @@ class StockManagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stockBloc = context.read<StockBloc>();
-
-    stockBloc.add(LoadStockEvent());
+    context.read<StockBloc>().add(LoadStockEvent());
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16.0),

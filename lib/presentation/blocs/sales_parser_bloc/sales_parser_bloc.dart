@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:dream_pedidos/core/features/stock_managment/data/datasources/external/file_parser.dart';
-import 'package:dream_pedidos/core/features/stock_managment/data/models/sales_data.dart';
+import 'package:dream_pedidos/data/datasources/external/file_parser.dart';
+import 'package:dream_pedidos/data/models/sales_data.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 part 'sales_parser_event.dart';

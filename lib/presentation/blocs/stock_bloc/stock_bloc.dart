@@ -1,8 +1,8 @@
-import 'package:dream_pedidos/core/features/stock_managment/data/repositories/cocktail_recipe_repository.dart';
+import 'package:dream_pedidos/data/repositories/cocktail_recipe_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'stock_event.dart';
 import 'stock_state.dart';
-import 'package:dream_pedidos/core/features/stock_managment/data/repositories/stock_repository.dart';
+import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 
 class StockBloc extends Bloc<StockEvent, StockState> {
   final StockRepository stockRepository;
@@ -13,6 +13,22 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     on<LoadStockEvent>(_onLoadStock);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
     on<SyncStockEvent>(_onSyncStock);
+    on<RemoveSelectedItemsEvent>(_onRemoveSelectedItems);
+  }
+
+  Future<void> _onRemoveSelectedItems(
+      RemoveSelectedItemsEvent event, Emitter<StockState> emit) async {
+    if (state is StockLoaded) {
+      final currentItems = (state as StockLoaded).stockItems;
+
+      // Filter out items that are being removed
+      final updatedItems = currentItems
+          .where((item) => !event.itemsToRemove.contains(item))
+          .toList();
+
+      emit(StockLoaded(updatedItems,
+          message: 'Items seleccionados eliminados.'));
+    }
   }
 
   /// Handle stock synchronization event

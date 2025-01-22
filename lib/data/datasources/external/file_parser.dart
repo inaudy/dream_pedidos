@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:dream_pedidos/core/features/stock_managment/data/models/recipe_model.dart';
-import 'package:dream_pedidos/core/features/stock_managment/data/models/stock_item.dart';
+import 'package:dream_pedidos/data/models/recipe_model.dart';
+import 'package:dream_pedidos/data/models/stock_item.dart';
 import '../../models/sales_data.dart';
 import 'xlsx_parser.dart';
 
