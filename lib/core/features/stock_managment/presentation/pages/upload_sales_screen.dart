@@ -1,7 +1,7 @@
-import 'package:dream_pedidos/core/features/stock_managment/data/models/sales_data.dart';
-import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/sales_parser_bloc/sales_parser_bloc.dart';
-import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/stock_bloc/stock_bloc.dart';
-import 'package:dream_pedidos/core/features/stock_managment/presentation/bloc/stock_bloc/stock_event.dart';
+import 'package:dream_pedidos/data/models/sales_data.dart';
+import 'package:dream_pedidos/presentation/blocs/sales_parser_bloc/sales_parser_bloc.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -17,15 +17,13 @@ class UploadSalesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fileBloc = context.read<SalesParserBloc>();
-    final stockBloc = context.read<StockBloc>();
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               ElevatedButton.icon(
                 onPressed: () => fileBloc.add(SalesParserPickFileEvent()),
