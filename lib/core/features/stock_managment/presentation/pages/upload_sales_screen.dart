@@ -9,20 +9,10 @@ import 'package:intl/intl.dart';
 class UploadSalesPage extends StatelessWidget {
   const UploadSalesPage({super.key});
 
-  void _syncStock(
-      BuildContext context, SalesParserBloc fileBloc, StockBloc stockBloc) {
-    final salesState = fileBloc.state;
-
-    if (salesState is SalesParserSuccess && salesState.salesData.isNotEmpty) {
-      stockBloc.add(SyncStockEvent(salesState.salesData));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Stock synced successfully!')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sync failed: no valid data.')),
-      );
-    }
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -38,17 +28,21 @@ class UploadSalesPage extends StatelessWidget {
           Row(
             children: [
               ElevatedButton.icon(
-                onPressed: () {
-                  context
-                      .read<SalesParserBloc>()
-                      .add(SalesParserPickFileEvent());
-                },
+                onPressed: () => fileBloc.add(SalesParserPickFileEvent()),
                 icon: const Icon(Icons.upload_file),
                 label: const Text('Importar'),
               ),
               const SizedBox(width: 20),
               ElevatedButton.icon(
-                onPressed: () => _syncStock(context, fileBloc, stockBloc),
+                onPressed: () {
+                  final salesState = fileBloc.state;
+                  if (salesState is SalesParserSuccess && salesState.salesData.isNotEmpty) {
+                    stockBloc.add(SyncStockEvent(salesState.salesData));
+                    _showSnackBar(context, 'Stock synced successfully!');
+                  } else {
+                    _showSnackBar(context, 'Sync failed: no valid data.');
+                  }
+                },
                 icon: const Icon(Icons.sync),
                 label: const Text('Sinc Inv'),
               ),
@@ -59,9 +53,7 @@ class UploadSalesPage extends StatelessWidget {
             child: BlocListener<SalesParserBloc, SalesParserState>(
               listener: (context, state) {
                 if (state is SalesParserFailure) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.error)),
-                  );
+                  _showSnackBar(context, state.error);
                 }
               },
               child: BlocBuilder<SalesParserBloc, SalesParserState>(
