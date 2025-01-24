@@ -1,10 +1,12 @@
+import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/bottom_nav_cubit.dart';
 import 'package:dream_pedidos/presentation/pages/config.dart';
 import 'package:dream_pedidos/presentation/pages/refill_report_screen.dart';
 import 'package:dream_pedidos/presentation/pages/stock_screen.dart';
 import 'package:dream_pedidos/presentation/pages/upload_sales_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomePage extends StatelessWidget {
   final List<Widget> _pages = [
@@ -50,6 +52,23 @@ class HomePage extends StatelessWidget {
         centerTitle: true,
         backgroundColor: const Color(0xFFBA0C2F),
         elevation: 2.0,
+        actions: [
+          BlocBuilder<BottomNavcubit, int>(
+            builder: (context, state) {
+              if (state == 1) {
+                // Show search icon only on StockManagePage
+                return IconButton(
+                  icon: const Icon(Icons.search),
+                  color: Colors.white,
+                  onPressed: () {
+                    context.read<StockBloc>().add(ToggleSearchEvent());
+                  },
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
       drawer: _buildDrawer(context),
       body: BlocBuilder<BottomNavcubit, int>(

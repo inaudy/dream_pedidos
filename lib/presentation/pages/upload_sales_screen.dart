@@ -26,31 +26,21 @@ class UploadSalesPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               ElevatedButton.icon(
-<<<<<<< HEAD:lib/presentation/pages/upload_sales_screen.dart
                 onPressed: () => context
                     .read<SalesParserBloc>()
                     .add(SalesParserPickFileEvent()),
-=======
-                onPressed: () => fileBloc.add(SalesParserPickFileEvent()),
->>>>>>> 0a869fd99f174b0a4d4d93d51db1695a8098767f:lib/core/features/stock_managment/presentation/pages/upload_sales_screen.dart
                 icon: const Icon(Icons.upload_file),
                 label: const Text('Importar'),
               ),
               const SizedBox(width: 20),
               ElevatedButton.icon(
                 onPressed: () {
-<<<<<<< HEAD:lib/presentation/pages/upload_sales_screen.dart
                   final salesState = context.read<SalesParserBloc>().state;
                   if (salesState is SalesParserSuccess &&
                       salesState.salesData.isNotEmpty) {
                     context
                         .read<StockBloc>()
                         .add(SyncStockEvent(salesState.salesData));
-=======
-                  final salesState = fileBloc.state;
-                  if (salesState is SalesParserSuccess && salesState.salesData.isNotEmpty) {
-                    stockBloc.add(SyncStockEvent(salesState.salesData));
->>>>>>> 0a869fd99f174b0a4d4d93d51db1695a8098767f:lib/core/features/stock_managment/presentation/pages/upload_sales_screen.dart
                     _showSnackBar(context, 'Stock synced successfully!');
                   } else {
                     _showSnackBar(context, 'Sync failed: no valid data.');

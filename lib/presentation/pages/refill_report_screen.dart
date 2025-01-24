@@ -185,7 +185,9 @@ class RefillReportPage extends StatelessWidget {
 
     itemSelectionCubit.clearSelection();
     stockBloc.add(LoadStockEvent());
-    _showSnackBar(context, 'Stock actualizado para los items seleccionados');
+    if (context.mounted) {
+      _showSnackBar(context, 'Stock actualizado para los items seleccionados');
+    }
   }
 
   void _showSnackBar(BuildContext context, String message) {

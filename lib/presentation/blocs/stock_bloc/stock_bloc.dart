@@ -14,6 +14,19 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     on<DeleteAllStockEvent>(_onDeleteAllStock);
     on<SyncStockEvent>(_onSyncStock);
     on<RemoveSelectedItemsEvent>(_onRemoveSelectedItems);
+    on<SearchStockEvent>(_onSearchStock);
+    on<ToggleSearchEvent>((event, emit) {
+      if (state is StockLoaded) {
+        final currentState = state as StockLoaded;
+        // Toggle the visibility
+        emit(StockLoaded(
+          currentState.stockItems,
+          filteredStockItems: currentState.filteredStockItems,
+          isSearchVisible: !currentState.isSearchVisible, // Toggle visibility
+          message: currentState.message,
+        ));
+      }
+    });
   }
 
   Future<void> _onRemoveSelectedItems(
@@ -28,6 +41,28 @@ class StockBloc extends Bloc<StockEvent, StockState> {
 
       emit(StockLoaded(updatedItems,
           message: 'Items seleccionados eliminados.'));
+    }
+  }
+
+  Future<void> _onSearchStock(
+      SearchStockEvent event, Emitter<StockState> emit) async {
+    if (state is StockLoaded) {
+      final currentState = state as StockLoaded;
+
+      // Split the query into words and filter stock items
+      final queryWords = event.query.toLowerCase().split(' ');
+      final filteredItems = currentState.stockItems.where((item) {
+        final itemName = item.itemName.toLowerCase();
+        return queryWords.every((word) => itemName.contains(word));
+      }).toList();
+
+      // Emit state with updated filtered items, keeping `isSearchVisible` as is
+      emit(StockLoaded(
+        currentState.stockItems,
+        filteredStockItems: filteredItems,
+        isSearchVisible: currentState.isSearchVisible, // Preserve visibility
+        message: currentState.message,
+      ));
     }
   }
 
