@@ -46,6 +46,7 @@ dependencies:
   intl: ^0.20.1
   printing: ^5.13.4
   pdf: ^3.11.1
+  mobile_scanner: ^6.0.3
 
 dev_dependencies:
   flutter_test:

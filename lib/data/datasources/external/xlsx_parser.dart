@@ -46,6 +46,7 @@ class XLSXParser {
 
   static Future<List<StockItem>> parseStockXLSX(File file) async {
     final bytes = await file.readAsBytes();
+
     final excel = Excel.decodeBytes(bytes);
 
     final sheet = excel.tables[excel.tables.keys.first];
@@ -61,6 +62,7 @@ class XLSXParser {
         maximumLevel: double.tryParse(row[3]?.value.toString() ?? '0') ?? 0,
         category: row[4]?.value.toString() ?? '',
         traspaso: row[5]?.value.toString() ?? '',
+        eanCode: row[6]?.value.toString() ?? '',
       );
     }).toList();
   }

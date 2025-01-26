@@ -5,6 +5,7 @@ class StockItem {
   final double maximumLevel;
   final String category;
   final String? traspaso;
+  final String? eanCode;
 
   StockItem({
     required this.itemName,
@@ -12,7 +13,8 @@ class StockItem {
     required this.minimumLevel,
     required this.maximumLevel,
     required this.category,
-    required this.traspaso,
+    this.traspaso,
+    this.eanCode,
   });
 
   // Method to create a copy of this StockItem with updated values
@@ -23,6 +25,7 @@ class StockItem {
     double? maximumLevel,
     String? category,
     String? traspaso,
+    String? eanCode,
   }) {
     return StockItem(
       itemName: itemName ?? this.itemName,
@@ -31,6 +34,7 @@ class StockItem {
       maximumLevel: maximumLevel ?? this.maximumLevel,
       category: category ?? this.category,
       traspaso: traspaso ?? this.traspaso,
+      eanCode: eanCode ?? this.eanCode,
     );
   }
 
@@ -43,6 +47,7 @@ class StockItem {
       'maximum_level': maximumLevel,
       'category': category,
       'traspaso': traspaso,
+      'ean_code': eanCode,
     };
   }
 
@@ -55,6 +60,7 @@ class StockItem {
       maximumLevel: map['maximum_level'],
       category: map['category'],
       traspaso: map['traspaso'],
+      eanCode: map['ean_code'],
     );
   }
 

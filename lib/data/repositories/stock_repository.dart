@@ -33,7 +33,8 @@ class StockRepository {
             minimum_level REAL NOT NULL,
             maximum_level REAL NOT NULL,
             category TEXT NOT NULL,
-            traspaso TEXT
+            traspaso TEXT,
+            ean_code TEXT
           )
         ''');
 
@@ -45,7 +46,8 @@ class StockRepository {
             minimum_level REAL NOT NULL,
             maximum_level REAL NOT NULL,
             category TEXT NOT NULL,
-            traspaso TEXT
+            traspaso TEXT,
+            ean_code TEXT
           )
         ''');
       },
@@ -63,10 +65,24 @@ class StockRepository {
       // Copy all data from stock_backup to stock
       await txn.rawInsert('''
       INSERT INTO stock (item_name, actual_stock, minimum_level, maximum_level, category, traspaso)
-      SELECT item_name, actual_stock, minimum_level, maximum_level, category, traspaso
+      SELECT item_name, actual_stock, minimum_level, maximum_level, category, traspaso, ean_code
       FROM stock_backup
     ''');
     });
+  }
+
+  /// Print all stock items for debugging
+  Future<void> printAllStockItems() async {
+    final db = await database;
+    final result = await db.query('stock');
+
+    if (result.isEmpty) {
+      print('No data found in the stock table.');
+    } else {
+      for (var row in result) {
+        print(row); // Each row is a Map<String, dynamic>
+      }
+    }
   }
 
   /// Add a single stock item
@@ -109,6 +125,7 @@ class StockRepository {
   Future<List<StockItem>> getAllStockItems() async {
     final db = await database;
     final result = await db.query('stock');
+    printAllStockItems();
 
     return result.map((map) => StockItem.fromMap(map)).toList();
   }

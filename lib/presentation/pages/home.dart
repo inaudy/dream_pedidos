@@ -1,5 +1,6 @@
 import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
+import 'package:dream_pedidos/presentation/pages/barcodescannerpage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/bottom_nav_cubit.dart';
@@ -57,12 +58,33 @@ class HomePage extends StatelessWidget {
             builder: (context, state) {
               if (state == 1) {
                 // Show search icon only on StockManagePage
-                return IconButton(
-                  icon: const Icon(Icons.search),
-                  color: Colors.white,
-                  onPressed: () {
-                    context.read<StockBloc>().add(ToggleSearchEvent());
-                  },
+                return Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.qr_code_scanner),
+                      color: Colors.black,
+                      onPressed: () async {
+                        final scannedBarcode = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const BarcodeScannerPage(),
+                          ),
+                        );
+                        if (scannedBarcode != null) {
+                          context
+                              .read<StockBloc>()
+                              .add(SearchStockEvent(scannedBarcode));
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      color: Colors.white,
+                      onPressed: () {
+                        context.read<StockBloc>().add(ToggleSearchEvent());
+                      },
+                    ),
+                  ],
                 );
               }
               return const SizedBox.shrink();

@@ -145,7 +145,8 @@ class StockManagePage extends StatelessWidget {
           children: [
             Text(
               'Mínimo: ${NumberFormat('#.#').format(item.minimumLevel)}\n'
-              'Máximo: ${NumberFormat('#.#').format(item.maximumLevel)}',
+              'Máximo: ${NumberFormat('#.#').format(item.maximumLevel)}'
+              'ean_code: ${item.eanCode}',
             ),
           ],
         ),
