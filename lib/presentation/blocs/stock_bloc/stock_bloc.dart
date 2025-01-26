@@ -27,6 +27,21 @@ class StockBloc extends Bloc<StockEvent, StockState> {
         ));
       }
     });
+    on<SearchByBarcodeEvent>((event, emit) async {
+      if (state is StockLoaded) {
+        final currentState = state as StockLoaded;
+        final filteredItems = currentState.stockItems
+            .where((item) => item.eanCode == event.eanCode)
+            .toList();
+
+        emit(StockLoaded(
+          currentState.stockItems,
+          filteredStockItems: filteredItems,
+          isSearchVisible: currentState.isSearchVisible,
+          message: 'Filtered by barcode ${event.eanCode}',
+        ));
+      }
+    });
   }
 
   Future<void> _onRemoveSelectedItems(

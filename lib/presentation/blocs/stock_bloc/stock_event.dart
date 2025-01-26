@@ -30,6 +30,12 @@ class RemoveSelectedItemsEvent extends StockEvent {
   List<Object?> get props => [itemsToRemove];
 }
 
+class SearchByBarcodeEvent extends StockEvent {
+  final String eanCode;
+
+  SearchByBarcodeEvent(this.eanCode);
+}
+
 class SearchStockEvent extends StockEvent {
   final String query;
 
