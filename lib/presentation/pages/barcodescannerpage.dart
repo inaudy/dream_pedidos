@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class BarcodeScannerPage extends StatelessWidget {
-  const BarcodeScannerPage({super.key});
+  const BarcodeScannerPage({super.key, required this.onScanned});
+  final Function(String) onScanned;
 
   @override
   Widget build(BuildContext context) {
@@ -13,11 +14,14 @@ class BarcodeScannerPage extends StatelessWidget {
       body: Stack(
         children: [
           MobileScanner(
-            onDetect: (BarcodeCapture barcodeCapture) {
+            onDetect: (barcodeCapture) {
               final barcode = barcodeCapture.barcodes.first;
               if (barcode.rawValue != null) {
-                Navigator.pop(
-                    context, barcode.rawValue); // Return the scanned barcode
+                final String? code = barcode.rawValue;
+                if (code != null) {
+                  onScanned(code);
+                  Navigator.pop(context, barcode.rawValue);
+                } // Return the scanned barcode
               }
             },
           ),

@@ -2,6 +2,7 @@ import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_state.dart';
 import 'package:dream_pedidos/data/models/stock_item.dart';
+import 'package:dream_pedidos/presentation/pages/barcodescannerpage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -14,69 +15,86 @@ class StockManagePage extends StatelessWidget {
     context.read<StockBloc>().add(LoadStockEvent());
 
     return Scaffold(
-        body: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        BlocBuilder<StockBloc, StockState>(
-          builder: (context, state) {
-            if (state is StockLoaded) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: state.isSearchVisible ? 50 : 0, // Animate height
-                padding: state.isSearchVisible
-                    ? const EdgeInsets.all(8)
-                    : EdgeInsets.zero,
-                child: state.isSearchVisible
-                    ? TextField(
-                        onChanged: (value) {
-                          context
-                              .read<StockBloc>()
-                              .add(SearchStockEvent(value));
-                        },
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.search, size: 18),
-                          labelStyle: const TextStyle(fontSize: 14),
-                          hintText: 'Buscar...',
-                          hintStyle: const TextStyle(fontSize: 14),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 12),
-                        ),
-                        style: const TextStyle(fontSize: 14),
-                      )
-                    : null,
-              );
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-        Expanded(
-          child: BlocBuilder<StockBloc, StockState>(
+        appBar: AppBar(
+          leading: BlocBuilder<StockBloc, StockState>(
             builder: (context, state) {
-              if (state is StockLoading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (state is StockLoaded) {
-                final itemsToDisplay = state.filteredStockItems.isNotEmpty
-                    ? state.filteredStockItems
-                    : state.stockItems;
-
-                return _buildCategorizedList(context, itemsToDisplay);
-              } else if (state is StockError) {
-                return Center(
-                  child: Text(
-                    'Error: ${state.message}',
-                    style: const TextStyle(color: Colors.red),
-                  ),
+              if (state is StockLoaded) {
+                final items = state.stockItems;
+                return IconButton(
+                  icon: const Icon(Icons.qr_code_scanner_sharp),
+                  onPressed: () {
+                    _openBarcodeScanner(context, items);
+                  },
                 );
+              } else {
+                return const SizedBox.shrink();
               }
-              return const Center(child: Text('No hay datos disponibles.'));
             },
           ),
         ),
-      ],
-    ));
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BlocBuilder<StockBloc, StockState>(
+              builder: (context, state) {
+                if (state is StockLoaded) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    height: state.isSearchVisible ? 50 : 0, // Animate height
+                    padding: state.isSearchVisible
+                        ? const EdgeInsets.all(8)
+                        : EdgeInsets.zero,
+                    child: state.isSearchVisible
+                        ? TextField(
+                            onChanged: (value) {
+                              context
+                                  .read<StockBloc>()
+                                  .add(SearchStockEvent(value));
+                            },
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.search, size: 18),
+                              labelStyle: const TextStyle(fontSize: 14),
+                              hintText: 'Buscar...',
+                              hintStyle: const TextStyle(fontSize: 14),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 12),
+                            ),
+                            style: const TextStyle(fontSize: 14),
+                          )
+                        : null,
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+            Expanded(
+              child: BlocBuilder<StockBloc, StockState>(
+                builder: (context, state) {
+                  if (state is StockLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is StockLoaded) {
+                    final itemsToDisplay = state.filteredStockItems.isNotEmpty
+                        ? state.filteredStockItems
+                        : state.stockItems;
+
+                    return _buildCategorizedList(context, itemsToDisplay);
+                  } else if (state is StockError) {
+                    return Center(
+                      child: Text(
+                        'Error: ${state.message}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    );
+                  }
+                  return const Center(child: Text('No hay datos disponibles.'));
+                },
+              ),
+            ),
+          ],
+        ));
   }
 
   /// Build categorized list of stock items
@@ -99,6 +117,34 @@ class StockManagePage extends StatelessWidget {
         return _buildCategorySection(context, category, items);
       }).toList(),
     );
+  }
+
+  void _openBarcodeScanner(BuildContext context, List<StockItem> items) async {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) =>
+                BarcodeScannerPage(onScanned: (String barcode) {
+                  final matchedItem = items.firstWhere(
+                    (item) => item.eanCode == barcode,
+                    orElse: () => StockItem(
+                        itemName: '',
+                        category: '',
+                        minimumLevel: 0,
+                        maximumLevel: 0,
+                        actualStock: 0,
+                        eanCode: ''),
+                  );
+                  if (matchedItem.eanCode != "") {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text('Item encontrado: ${matchedItem.itemName}'),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                })));
   }
 
   /// Build individual category section

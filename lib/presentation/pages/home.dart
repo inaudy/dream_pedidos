@@ -60,7 +60,7 @@ class HomePage extends StatelessWidget {
                 // Show search icon only on StockManagePage
                 return Row(
                   children: [
-                    IconButton(
+                    /*IconButton(
                       icon: const Icon(Icons.qr_code_scanner),
                       color: Colors.black,
                       onPressed: () async {
@@ -76,7 +76,7 @@ class HomePage extends StatelessWidget {
                               .add(SearchStockEvent(scannedBarcode));
                         }
                       },
-                    ),
+                    ),*/
                     IconButton(
                       icon: const Icon(Icons.search),
                       color: Colors.white,
