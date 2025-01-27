@@ -70,11 +70,10 @@ class HomePage extends StatelessWidget {
                             builder: (context) => const BarcodeScannerPage(),
                           ),
                         );
-                        if (scannedBarcode != null &&
-                            scannedBarcode is String) {
+                        if (scannedBarcode != null) {
                           context
                               .read<StockBloc>()
-                              .add(SearchByBarcodeEvent(scannedBarcode));
+                              .add(SearchStockEvent(scannedBarcode));
                         }
                       },
                     ),
