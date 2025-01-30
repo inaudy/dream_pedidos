@@ -1,6 +1,5 @@
 import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
-import 'package:dream_pedidos/presentation/pages/barcodescannerpage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/bottom_nav_cubit.dart';
@@ -60,23 +59,6 @@ class HomePage extends StatelessWidget {
                 // Show search icon only on StockManagePage
                 return Row(
                   children: [
-                    /*IconButton(
-                      icon: const Icon(Icons.qr_code_scanner),
-                      color: Colors.black,
-                      onPressed: () async {
-                        final scannedBarcode = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const BarcodeScannerPage(),
-                          ),
-                        );
-                        if (scannedBarcode != null) {
-                          context
-                              .read<StockBloc>()
-                              .add(SearchStockEvent(scannedBarcode));
-                        }
-                      },
-                    ),*/
                     IconButton(
                       icon: const Icon(Icons.search),
                       color: Colors.white,
@@ -143,35 +125,15 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildDrawerHeader() {
-    return const DrawerHeader(
-      decoration: BoxDecoration(
+    return DrawerHeader(
+      decoration: const BoxDecoration(
         color: Color(0xFFBA0C2F),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
-        ),
       ),
-      child: Column(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.white,
-            child: Icon(
-              Icons.person,
-              size: 40,
-              color: Color(0xFFBA0C2F),
-            ),
-          ),
-          SizedBox(height: 16),
-          Text(
-            'MENU PRINCIPAL',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+          Image.asset(
+            'assets/images/logo.png',
           ),
         ],
       ),

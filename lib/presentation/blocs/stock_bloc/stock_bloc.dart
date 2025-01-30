@@ -13,7 +13,6 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     on<LoadStockEvent>(_onLoadStock);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
     on<SyncStockEvent>(_onSyncStock);
-    on<RemoveSelectedItemsEvent>(_onRemoveSelectedItems);
     on<SearchStockEvent>(_onSearchStock);
     on<ToggleSearchEvent>((event, emit) {
       if (state is StockLoaded) {
@@ -113,9 +112,6 @@ class StockBloc extends Bloc<StockEvent, StockState> {
       DeleteAllStockEvent event, Emitter<StockState> emit) async {
     emit(StockLoading());
     try {
-      // Clear all stock items
-      await stockRepository.deleteAllStockItems();
-
       // Reset stock from backup
       await stockRepository.resetStockFromBackup();
 
