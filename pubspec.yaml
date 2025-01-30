@@ -47,10 +47,20 @@ dependencies:
   printing: ^5.13.4
   pdf: ^3.11.1
   mobile_scanner: ^6.0.3
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+ 
+flutter_launcher_icons: ^0.13.1
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"  # Your app icon
+  adaptive_icon_foreground: "assets/images/logo.png"
+  adaptive_icon_background: "#BA0C2F"  #
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
