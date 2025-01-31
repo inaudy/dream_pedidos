@@ -1,6 +1,4 @@
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

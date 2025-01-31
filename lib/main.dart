@@ -18,17 +18,21 @@ void main() {
   final StockRepository stockRepository = StockDatabase();
   final CocktailRecipeRepository cocktailRecipeRepository = RecipeDatabase();
   runApp(MyApp(
-      stockRepository: stockRepository,
-      cocktailRecipeRepository: cocktailRecipeRepository));
+    stockRepository: stockRepository,
+    cocktailRecipeRepository: cocktailRecipeRepository,
+    stockManagementBloc: StockManagementBloc(stockRepository),
+  ));
 }
 
 class MyApp extends StatelessWidget {
   final StockRepository stockRepository;
   final CocktailRecipeRepository cocktailRecipeRepository;
+  final StockManagementBloc stockManagementBloc;
   const MyApp(
       {super.key,
       required this.stockRepository,
-      required this.cocktailRecipeRepository});
+      required this.cocktailRecipeRepository,
+      required this.stockManagementBloc});
 
   @override
   Widget build(BuildContext context) {
@@ -38,18 +42,18 @@ class MyApp extends StatelessWidget {
       home: MultiBlocProvider(
         providers: [
           BlocProvider(
-              create: (context) => FileStockBloc(
-                  stockRepository, StockManagementBloc(stockRepository))),
+              create: (context) =>
+                  FileStockBloc(stockRepository, stockManagementBloc)),
           BlocProvider(
               create: (context) => RecipeParserBloc(cocktailRecipeRepository)),
           BlocProvider(create: (context) => StockSearchCubit()),
           BlocProvider(
-            create: (context) => StockManagementBloc(stockRepository)
+            create: (context) => stockManagementBloc
               ..add(LoadStockEvent()), // Load stock on startup
           ),
           BlocProvider(
-            create: (context) => StockSyncBloc(
-                stockRepository, StockManagementBloc(stockRepository)),
+            create: (context) =>
+                StockSyncBloc(stockRepository, stockManagementBloc),
           ),
           BlocProvider(create: (context) => SalesParserBloc()),
           BlocProvider(create: (context) => ItemSelectionCubit()),
