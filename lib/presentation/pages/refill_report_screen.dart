@@ -1,24 +1,23 @@
 import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_state.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/item_selection_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 class RefillReportPage extends StatelessWidget {
-  final StockRepository stockRepository = StockRepository();
+  final StockRepository stockRepository;
 
-  RefillReportPage({super.key});
+  // Pass in the StockRepository as a dependency
+  RefillReportPage({Key? key, required this.stockRepository}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    context.read<StockBloc>().add(LoadStockEvent());
+    context.read<StockManagementBloc>().add(LoadStockEvent());
 
     return Scaffold(
-      body: BlocBuilder<StockBloc, StockState>(
+      body: BlocBuilder<StockManagementBloc, StockManagementState>(
         builder: (context, state) {
           if (state is StockLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -170,7 +169,7 @@ class RefillReportPage extends StatelessWidget {
 
   Future<void> _bulkUpdateStock(BuildContext context) async {
     final itemSelectionCubit = context.read<ItemSelectionCubit>();
-    final stockBloc = context.read<StockBloc>();
+    final stockBloc = context.read<StockManagementBloc>();
     final selectedItems = itemSelectionCubit.state.selectedItems;
 
     if (selectedItems.isEmpty) {

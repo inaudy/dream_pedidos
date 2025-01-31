@@ -1,10 +1,8 @@
 import 'package:bloc/bloc.dart';
+import 'package:dream_pedidos/data/datasources/external/file_parser.dart';
 import 'package:dream_pedidos/data/models/recipe_model.dart';
-import 'package:dream_pedidos/data/repositories/cocktail_recipe_repository.dart';
-
+import 'package:dream_pedidos/data/repositories/recipe_repository.dart';
 import 'package:equatable/equatable.dart';
-import '../../../data/datasources/external/file_parser.dart';
-
 part 'recipe_parser_event.dart';
 part 'recipe_parser_state.dart';
 

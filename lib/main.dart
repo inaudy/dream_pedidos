@@ -1,46 +1,63 @@
+import 'package:dream_pedidos/data/repositories/recipe_repository.dart';
+import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/presentation/blocs/recipe_parser_bloc/recipe_parser_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/sales_parser_bloc/sales_parser_bloc.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_sync_bloc/stock_sync_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/bottom_nav_cubit.dart';
 import 'package:dream_pedidos/presentation/cubit/item_selection_cubit.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_parser_bloc/file_stock_bloc.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
+import 'package:dream_pedidos/presentation/cubit/stock_search_cubit.dart';
 import 'package:dream_pedidos/presentation/pages/home.dart';
-import 'package:dream_pedidos/data/repositories/cocktail_recipe_repository.dart';
-import 'package:dream_pedidos/data/repositories/stock_repository.dart';
+import 'package:dream_pedidos/data/datasources/local/recipe_database.dart';
+import 'package:dream_pedidos/data/datasources/local/stock_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() {
-  runApp(const MyApp());
+  final StockRepository stockRepository = StockDatabase();
+  final CocktailRecipeRepository cocktailRecipeRepository = RecipeDatabase();
+  runApp(MyApp(
+      stockRepository: stockRepository,
+      cocktailRecipeRepository: cocktailRecipeRepository));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final StockRepository stockRepository;
+  final CocktailRecipeRepository cocktailRecipeRepository;
+  const MyApp(
+      {super.key,
+      required this.stockRepository,
+      required this.cocktailRecipeRepository});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Pedidos Tigotan',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(primarySwatch: Colors.red),
       home: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (context) => FileStockBloc(StockRepository()),
+              create: (context) => FileStockBloc(
+                  stockRepository, StockManagementBloc(stockRepository))),
+          BlocProvider(
+              create: (context) => RecipeParserBloc(cocktailRecipeRepository)),
+          BlocProvider(create: (context) => StockSearchCubit()),
+          BlocProvider(
+            create: (context) => StockManagementBloc(stockRepository)
+              ..add(LoadStockEvent()), // Load stock on startup
           ),
           BlocProvider(
-            create: (context) => RecipeParserBloc(CocktailRecipeRepository()),
+            create: (context) => StockSyncBloc(
+                stockRepository, StockManagementBloc(stockRepository)),
           ),
-          BlocProvider(
-            create: (context) =>
-                StockBloc(StockRepository(), CocktailRecipeRepository()),
-          ),
-          BlocProvider(
-            create: (context) => SalesParserBloc(),
-          ),
+          BlocProvider(create: (context) => SalesParserBloc()),
           BlocProvider(create: (context) => ItemSelectionCubit()),
-          BlocProvider(create: (context) => BottomNavcubit())
+          BlocProvider(create: (context) => BottomNavcubit()),
         ],
-        child: HomePage(),
+        child: HomePage(
+          stockRepository: stockRepository,
+        ),
       ),
     );
   }

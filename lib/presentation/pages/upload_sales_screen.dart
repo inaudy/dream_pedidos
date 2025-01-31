@@ -1,7 +1,6 @@
 import 'package:dream_pedidos/data/models/sales_data.dart';
 import 'package:dream_pedidos/presentation/blocs/sales_parser_bloc/sales_parser_bloc.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_sync_bloc/stock_sync_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -36,18 +35,39 @@ class UploadSalesPage extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () {
                   final salesState = context.read<SalesParserBloc>().state;
+                  final stockSyncState = context.read<StockSyncBloc>().state;
+
+                  // Prevent duplicate sync if stock was already updated
+                  if (stockSyncState is StockSyncLoading) {
+                    _showSnackBar(context, 'Sincronización en progreso...');
+                    return;
+                  }
+
                   if (salesState is SalesParserSuccess &&
                       salesState.salesData.isNotEmpty) {
                     context
-                        .read<StockBloc>()
+                        .read<StockSyncBloc>()
                         .add(SyncStockEvent(salesState.salesData));
-                    _showSnackBar(context, 'Stock synced successfully!');
                   } else {
-                    _showSnackBar(context, 'Sync failed: no valid data.');
+                    _showSnackBar(context, 'Error, datos no válidos.');
                   }
                 },
                 icon: const Icon(Icons.sync),
-                label: const Text('Sinc Inv'),
+                label: const Text('Actualizar Almacén'),
+              ),
+
+              SizedBox(height: 10), // Add some spacing
+              BlocListener<StockSyncBloc, StockSyncState>(
+                listener: (context, state) {
+                  if (state is StockSyncError) {
+                    _showSnackBar(context, state.message);
+                  } else if (state is StockSyncSuccess) {
+                    _showSnackBar(
+                        context, 'Almacén actualizado correctamente!');
+                  }
+                },
+                child:
+                    Container(), // Dummy child as BlocListener does not render UI
               ),
             ],
           ),

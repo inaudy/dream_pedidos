@@ -1,5 +1,7 @@
+import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/bottom_nav_cubit.dart';
@@ -9,14 +11,16 @@ import 'package:dream_pedidos/presentation/pages/stock_screen.dart';
 import 'package:dream_pedidos/presentation/pages/upload_sales_screen.dart';
 
 class HomePage extends StatelessWidget {
-  final List<Widget> _pages = [
-    const UploadSalesPage(),
-    const StockManagePage(),
-    RefillReportPage(),
-    const ConfigPage(),
-  ];
+  final StockRepository stockRepository;
 
-  HomePage({super.key});
+  HomePage({super.key, required this.stockRepository});
+
+  List<Widget> get _pages => [
+        const UploadSalesPage(),
+        const StockManagePage(),
+        RefillReportPage(stockRepository: stockRepository),
+        const ConfigPage(),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +39,9 @@ class HomePage extends StatelessWidget {
         title: BlocBuilder<BottomNavcubit, int>(
           builder: (context, state) {
             final List<String> appBarsTitle = [
-              'ACTUALIZAR VENTAS',
-              'STOCK ARECA',
-              'LISTA PEDIDOS',
+              'VENTAS',
+              'ALMACEN',
+              'PEDIDO',
               'CONFIGURACION',
             ];
             return Text(
@@ -63,7 +67,9 @@ class HomePage extends StatelessWidget {
                       icon: const Icon(Icons.search),
                       color: Colors.white,
                       onPressed: () {
-                        context.read<StockBloc>().add(ToggleSearchEvent());
+                        context
+                            .read<StockManagementBloc>()
+                            .add(ToggleSearchEvent());
                       },
                     ),
                   ],
@@ -90,24 +96,24 @@ class HomePage extends StatelessWidget {
           _buildDrawerHeader(),
           Expanded(
             child: ListView(
-              padding: EdgeInsets.zero,
+              padding: EdgeInsets.only(left: 16),
               children: [
                 _buildDrawerItem(
                   context,
-                  icon: Icons.upload_file,
-                  title: 'Actualizar Ventas Ayer',
+                  icon: Icons.sync,
+                  title: 'Ventas',
                   pageIndex: 0,
                 ),
                 _buildDrawerItem(
                   context,
-                  icon: Icons.list,
-                  title: 'Stock Areca',
+                  icon: Icons.store,
+                  title: 'Almacen',
                   pageIndex: 1,
                 ),
                 _buildDrawerItem(
                   context,
-                  icon: Icons.report,
-                  title: 'Pedidos Areca',
+                  icon: Icons.list,
+                  title: 'Pedido',
                   pageIndex: 2,
                 ),
                 _buildDrawerItem(
@@ -145,7 +151,6 @@ class HomePage extends StatelessWidget {
     return ListTile(
       leading: Icon(
         icon,
-        color: const Color(0xFFBA0C2F),
       ),
       title: Text(
         title,
@@ -154,8 +159,8 @@ class HomePage extends StatelessWidget {
       onTap: () {
         _navigateToPage(context, pageIndex);
       },
-      horizontalTitleGap: 0.0,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      horizontalTitleGap: 10,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       dense: true,
     );
   }

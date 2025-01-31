@@ -1,4 +1,4 @@
-import 'package:equatable/equatable.dart';
+/*import 'package:equatable/equatable.dart';
 import 'package:dream_pedidos/data/models/stock_item.dart';
 
 abstract class StockEvent extends Equatable {
@@ -38,3 +38,4 @@ class SearchStockEvent extends StockEvent {
   @override
   List<Object?> get props => [query];
 }
+*/

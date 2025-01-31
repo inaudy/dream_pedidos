@@ -1,4 +1,4 @@
-import 'package:equatable/equatable.dart';
+/*import 'package:equatable/equatable.dart';
 import 'package:dream_pedidos/data/models/stock_item.dart';
 
 abstract class StockState extends Equatable {
@@ -38,3 +38,4 @@ class StockError extends StockState {
   @override
   List<Object?> get props => [message];
 }
+*/

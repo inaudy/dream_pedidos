@@ -1,7 +1,6 @@
 import 'package:dream_pedidos/presentation/blocs/recipe_parser_bloc/recipe_parser_bloc.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_parser_bloc/file_stock_bloc.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,7 +12,7 @@ class ConfigPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final fileStockBloc = context.read<FileStockBloc>();
     final fileEscandallosBloc = context.read<RecipeParserBloc>();
-    final stockBloc = context.read<StockBloc>();
+    final stockBloc = context.read<StockManagementBloc>();
     final messenger = ScaffoldMessenger.of(context);
 
     return Scaffold(
@@ -99,7 +98,8 @@ class ConfigPage extends StatelessWidget {
     }
   }
 
-  void _resetStock(StockBloc stockBloc, ScaffoldMessengerState messenger) {
+  void _resetStock(
+      StockManagementBloc stockBloc, ScaffoldMessengerState messenger) {
     stockBloc.add(DeleteAllStockEvent());
     stockBloc.add(LoadStockEvent());
 

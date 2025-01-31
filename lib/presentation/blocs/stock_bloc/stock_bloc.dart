@@ -1,8 +1,11 @@
-import 'package:dream_pedidos/data/repositories/cocktail_recipe_repository.dart';
+/*import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dream_pedidos/data/repositories/recipe_repository.dart';
+import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'stock_event.dart';
 import 'stock_state.dart';
-import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 
 class StockBloc extends Bloc<StockEvent, StockState> {
   final StockRepository stockRepository;
@@ -26,21 +29,6 @@ class StockBloc extends Bloc<StockEvent, StockState> {
         ));
       }
     });
-  }
-
-  Future<void> _onRemoveSelectedItems(
-      RemoveSelectedItemsEvent event, Emitter<StockState> emit) async {
-    if (state is StockLoaded) {
-      final currentItems = (state as StockLoaded).stockItems;
-
-      // Filter out items that are being removed
-      final updatedItems = currentItems
-          .where((item) => !event.itemsToRemove.contains(item))
-          .toList();
-
-      emit(StockLoaded(updatedItems,
-          message: 'Items seleccionados eliminados.'));
-    }
   }
 
   Future<void> _onSearchStock(
@@ -70,6 +58,16 @@ class StockBloc extends Bloc<StockEvent, StockState> {
       SyncStockEvent event, Emitter<StockState> emit) async {
     emit(StockLoading());
     try {
+      final DateTime salesDate = event.salesData.first.date;
+      // Check last sync date before syncing
+      final bool alreadySynced = await _isAlreadySynced(salesDate);
+      if (alreadySynced) {
+        emit(StockError("Error: Almacen actualizado ya con ventas del " +
+            DateFormat('dd/MM/yyyy').format(salesDate)));
+            emit(StockLoaded());
+        return;
+      }
+
       // Transform sales data to ingredient-based deductions
       final salesData = event.salesData
           .map((sale) => {
@@ -84,15 +82,36 @@ class StockBloc extends Bloc<StockEvent, StockState> {
       // Perform bulk stock updates
       await stockRepository.bulkUpdateStock(updatedSalesData);
 
+      // Save the last sync date
+      await _saveLastSyncDate(salesDate);
+
       // Load updated stock items
       final updatedStock = await stockRepository.getAllStockItems();
       emit(StockLoaded(
         updatedStock,
-        message: 'Stock synchronization completed successfully!',
+        message:
+            'Almacen actualizado con ventas de ${DateFormat('dd/MM/yyyy').format(salesDate)}!',
       ));
     } catch (e) {
-      emit(StockError('Failed to synchronize stock: ${e.toString()}'));
+      emit(StockError('Error al sincronizar datos: ${e.toString()}'));
     }
+  }
+
+  /// Save the last sync date from sales data
+  Future<void> _saveLastSyncDate(DateTime salesDate) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_sync_date', salesDate.toIso8601String());
+  }
+
+  /// Check if sales data from this date has already been synced
+  Future<bool> _isAlreadySynced(DateTime salesDate) async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastSyncString = prefs.getString('last_sync_date');
+
+    if (lastSyncString == null) return false; // No sync has happened yet
+
+    final lastSyncDate = DateTime.parse(lastSyncString);
+    return DateUtils.isSameDay(lastSyncDate, salesDate);
   }
 
   /// Handle stock loading event
@@ -101,9 +120,10 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     emit(StockLoading());
     try {
       final stockItems = await stockRepository.getAllStockItems();
-      emit(StockLoaded(stockItems, message: 'Stock data loaded successfully.'));
+      emit(StockLoaded(stockItems,
+          message: 'Datos almacen cargados correctamente.'));
     } catch (error) {
-      emit(StockError('Failed to load stock: ${error.toString()}'));
+      emit(StockError('Error cargando stocks de almacen: ${error.toString()}'));
     }
   }
 
@@ -117,9 +137,9 @@ class StockBloc extends Bloc<StockEvent, StockState> {
 
       // Reload the stock items
       final updatedStock = await stockRepository.getAllStockItems();
-      emit(StockLoaded(updatedStock, message: 'Stock reset completed.'));
+      emit(StockLoaded(updatedStock, message: 'Almacen iniciado desde mcero.'));
     } catch (error) {
-      emit(StockError('Failed to reset stock: ${error.toString()}'));
+      emit(StockError('Error al reiniciar: ${error.toString()}'));
     }
   }
 
@@ -153,3 +173,4 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     return updatedSalesData;
   }
 }
+*/

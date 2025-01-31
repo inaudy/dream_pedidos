@@ -1,7 +1,6 @@
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_bloc.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_event.dart';
-import 'package:dream_pedidos/presentation/blocs/stock_bloc/stock_state.dart';
 import 'package:dream_pedidos/data/models/stock_item.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
+import 'package:dream_pedidos/presentation/cubit/stock_search_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -11,75 +10,103 @@ class StockManagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<StockBloc>().add(LoadStockEvent());
-
     return Scaffold(
-        body: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        BlocBuilder<StockBloc, StockState>(
-          builder: (context, state) {
-            if (state is StockLoaded) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: state.isSearchVisible ? 50 : 0, // Animate height
-                padding: state.isSearchVisible
-                    ? const EdgeInsets.all(8)
-                    : EdgeInsets.zero,
-                child: state.isSearchVisible
-                    ? TextField(
-                        onChanged: (value) {
-                          context
-                              .read<StockBloc>()
-                              .add(SearchStockEvent(value));
-                        },
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.search, size: 18),
-                          labelStyle: const TextStyle(fontSize: 14),
-                          hintText: 'Buscar...',
-                          hintStyle: const TextStyle(fontSize: 14),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 12),
-                        ),
-                        style: const TextStyle(fontSize: 14),
-                      )
-                    : null,
-              );
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-        Expanded(
-          child: BlocBuilder<StockBloc, StockState>(
-            builder: (context, state) {
-              if (state is StockLoading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (state is StockLoaded) {
-                final itemsToDisplay = state.filteredStockItems.isNotEmpty
-                    ? state.filteredStockItems
-                    : state.stockItems;
-
-                return _buildCategorizedList(context, itemsToDisplay);
-              } else if (state is StockError) {
-                return Center(
-                  child: Text(
-                    'Error: ${state.message}',
-                    style: const TextStyle(color: Colors.red),
-                  ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 🔹 Listen for StockLoaded updates after sync/upload
+          BlocListener<StockManagementBloc, StockManagementState>(
+            listener: (context, state) {
+              if (state is StockLoaded) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message ?? 'Stock actualizado')),
                 );
               }
-              return const Center(child: Text('No hay datos disponibles.'));
             },
+            child: _buildSearchBar(context),
           ),
-        ),
-      ],
-    ));
+
+          // 🔹 Stock List (Filtered & Categorized)
+          Expanded(
+            child: BlocBuilder<StockManagementBloc, StockManagementState>(
+              builder: (context, stockState) {
+                if (stockState is StockLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (stockState is StockLoaded) {
+                  final searchQuery =
+                      context.watch<StockSearchCubit>().state.toLowerCase();
+
+                  final filteredStock =
+                      _applySearchFilter(stockState.stockItems, searchQuery);
+
+                  return _buildCategorizedList(context, filteredStock);
+                } else if (stockState is StockError) {
+                  return Center(
+                    child: Text(
+                      'Error: ${stockState.message}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+                return const Center(child: Text('No hay datos disponibles.'));
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// Build categorized list of stock items
+  /// 🔹 Search Bar (Toggles Visibility)
+  Widget _buildSearchBar(BuildContext context) {
+    return BlocBuilder<StockManagementBloc, StockManagementState>(
+      builder: (context, state) {
+        if (state is StockLoaded) {
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: state.isSearchVisible ? 50 : 0, // Animate height
+            padding: state.isSearchVisible
+                ? const EdgeInsets.all(8)
+                : EdgeInsets.zero,
+            child: state.isSearchVisible
+                ? TextField(
+                    onChanged: (value) {
+                      context.read<StockSearchCubit>().updateSearchQuery(value);
+                    },
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      hintText: 'Buscar...',
+                      hintStyle: const TextStyle(fontSize: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
+                    ),
+                    style: const TextStyle(fontSize: 14),
+                  )
+                : null,
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  /// 🔹 Apply search filtering logic
+  List<StockItem> _applySearchFilter(
+      List<StockItem> stockItems, String searchQuery) {
+    if (searchQuery.isEmpty) return stockItems;
+
+    final queryWords = searchQuery.toLowerCase().split(' ');
+
+    return stockItems.where((item) {
+      final itemName = item.itemName.toLowerCase();
+      return queryWords.every((word) => itemName.contains(word));
+    }).toList();
+  }
+
+  /// 🔹 Build categorized stock list
   Widget _buildCategorizedList(
       BuildContext context, List<StockItem> stockItems) {
     final categorizedData = _categorizeStockItems(stockItems);
@@ -101,7 +128,7 @@ class StockManagePage extends StatelessWidget {
     );
   }
 
-  /// Build individual category section
+  /// 🔹 Build individual category section
   Widget _buildCategorySection(
       BuildContext context, String category, List<StockItem> items) {
     return Column(
@@ -130,7 +157,7 @@ class StockManagePage extends StatelessWidget {
     );
   }
 
-  /// Build individual stock item
+  /// 🔹 Build individual stock item
   Widget _buildStockItem(BuildContext context, StockItem item) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -141,14 +168,9 @@ class StockManagePage extends StatelessWidget {
           item.itemName,
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
-        subtitle: Row(
-          children: [
-            Text(
-              'Mínimo: ${NumberFormat('#.#').format(item.minimumLevel)}\n'
-              'Máximo: ${NumberFormat('#.#').format(item.maximumLevel)}'
-              'ean_code: ${item.eanCode}',
-            ),
-          ],
+        subtitle: Text(
+          'Mínimo: ${NumberFormat('#.#').format(item.minimumLevel)}\n'
+          'Máximo: ${NumberFormat('#.#').format(item.maximumLevel)}',
         ),
         leading: Text(
           NumberFormat('#.#').format(item.actualStock),
@@ -161,7 +183,7 @@ class StockManagePage extends StatelessWidget {
     );
   }
 
-  /// Categorize stock items by their category
+  /// 🔹 Categorize stock items by category
   Map<String, List<StockItem>> _categorizeStockItems(
       List<StockItem> stockItems) {
     final categorized = <String, List<StockItem>>{};
