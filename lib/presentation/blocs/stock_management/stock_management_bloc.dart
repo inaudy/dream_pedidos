@@ -33,11 +33,9 @@ class StockManagementBloc
   /// 🔹 Fix: Ensure `isSearchVisible` is initialized
   Future<void> _onLoadStock(
       LoadStockEvent event, Emitter<StockManagementState> emit) async {
-    print('load stock event from stock management bloc');
     emit(StockLoading());
     try {
       final stockItems = await stockRepository.getAllStockItems();
-      print("✅ Stock data loaded. Total Items: ${stockItems.length}");
       emit(StockLoaded(
         stockItems,
         message: 'Stock data loaded successfully.',

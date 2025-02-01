@@ -5,7 +5,7 @@ import 'package:equatable/equatable.dart';
 part 'item_selection_state.dart';
 
 class ItemSelectionCubit extends Cubit<ItemSelectionState> {
-  ItemSelectionCubit() : super(ItemSelectionState());
+  ItemSelectionCubit() : super(const ItemSelectionState());
 
   /// 🔹 Selects an item and tracks its refill quantity
   void selectItem(StockItem item) {
@@ -37,6 +37,6 @@ class ItemSelectionCubit extends Cubit<ItemSelectionState> {
 
   /// 🔹 Clears selection and refill quantities after submission
   void clearSelection() {
-    emit(ItemSelectionState()); // Reset to initial state
+    emit(const ItemSelectionState()); // Reset to initial state
   }
 }

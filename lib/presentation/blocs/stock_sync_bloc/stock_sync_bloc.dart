@@ -47,7 +47,6 @@ class StockSyncBloc extends Bloc<StockSyncEvent, StockSyncState> {
       await _saveLastSyncDate(salesDate);
 
       emit(StockSyncSuccess());
-      print('load stock event from stock sync bloc');
       _stockManagementBloc.add(LoadStockEvent());
     } catch (error) {
       emit(StockSyncError('Error al sincronizar stock: ${error.toString()}'));

@@ -64,6 +64,7 @@ class StockDatabase implements StockRepository {
     );
   }
 
+  @override
   Future<void> resetStockFromBackup() async {
     final db = await database;
     await db.transaction((txn) async {
@@ -75,6 +76,7 @@ class StockDatabase implements StockRepository {
     });
   }
 
+  @override
   Future<void> printAllStockItems() async {
     final db = await database;
     final result = await db.query('stock');
@@ -88,6 +90,7 @@ class StockDatabase implements StockRepository {
     }
   }
 
+  @override
   Future<void> addStockItems(List<StockItem> items) async {
     final db = await database;
     final batch = db.batch();
@@ -109,12 +112,14 @@ class StockDatabase implements StockRepository {
     ''');
   }
 
+  @override
   Future<List<StockItem>> getAllStockItems() async {
     final db = await database;
     final result = await db.query('stock');
     return result.map((map) => StockItem.fromMap(map)).toList();
   }
 
+  @override
   Future<void> bulkUpdateStock(List<Map<String, dynamic>> salesData) async {
     final db = await database;
     await db.transaction((txn) async {
@@ -133,6 +138,7 @@ class StockDatabase implements StockRepository {
     });
   }
 
+  @override
   Future<int> updateStockItem(StockItem item) async {
     final db = await database;
     return await db.update(

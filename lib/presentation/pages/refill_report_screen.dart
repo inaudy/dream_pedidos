@@ -9,8 +9,7 @@ import 'package:intl/intl.dart';
 class RefillReportPage extends StatelessWidget {
   final StockRepository stockRepository;
 
-  const RefillReportPage({Key? key, required this.stockRepository})
-      : super(key: key);
+  const RefillReportPage({super.key, required this.stockRepository});
 
   @override
   Widget build(BuildContext context) {

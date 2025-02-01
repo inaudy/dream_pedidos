@@ -11,7 +11,7 @@ import 'package:dream_pedidos/presentation/pages/upload_sales_screen.dart';
 class HomePage extends StatelessWidget {
   final StockRepository stockRepository;
 
-  HomePage({super.key, required this.stockRepository});
+  const HomePage({super.key, required this.stockRepository});
 
   List<Widget> get _pages => [
         const UploadSalesPage(),
@@ -94,7 +94,7 @@ class HomePage extends StatelessWidget {
           _buildDrawerHeader(),
           Expanded(
             child: ListView(
-              padding: EdgeInsets.only(left: 16),
+              padding: const EdgeInsets.only(left: 16),
               children: [
                 _buildDrawerItem(
                   context,
