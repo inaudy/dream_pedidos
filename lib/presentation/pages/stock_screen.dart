@@ -16,6 +16,11 @@ class StockManagePage extends StatelessWidget {
         children: [
           // 🔹 Listen for StockLoaded updates after sync/upload
           BlocListener<StockManagementBloc, StockManagementState>(
+            listenWhen: (previous, current) {
+              // Only show snackbar when stockItems change, not when searching
+              return previous is! StockLoaded ||
+                  previous.stockItems != (current as StockLoaded).stockItems;
+            },
             listener: (context, state) {
               if (state is StockLoaded) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -169,7 +174,7 @@ class StockManagePage extends StatelessWidget {
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
-          'Mínimo: ${NumberFormat('#.#').format(item.minimumLevel)}\n'
+          'Mínimo: ${NumberFormat('#.#').format(item.minimumLevel)} | '
           'Máximo: ${NumberFormat('#.#').format(item.maximumLevel)}',
         ),
         leading: Text(

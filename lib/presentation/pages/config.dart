@@ -24,21 +24,21 @@ class ConfigPage extends StatelessWidget {
             _buildConfigButton(
               icon: Icons.restart_alt,
               label: 'Reset Stock',
-              //color: Colors.red,
+              textColor: Colors.black, // White text for critical actions
               onPressed: () => _resetStock(stockBloc, messenger),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 6),
             _buildConfigButton(
               icon: Icons.upload_file,
               label: 'Cargar Stocks',
-              //color: Colors.blue,
+              textColor: Colors.black, // Darker text for neutral actions
               onPressed: () => _uploadFile(fileStockBloc, messenger),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 6),
             _buildConfigButton(
               icon: Icons.upload_file,
               label: 'Cargar Escandallos',
-              //color: Colors.blue,
+              textColor: Colors.black,
               onPressed: () =>
                   _uploadEscandallos(fileEscandallosBloc, messenger),
             ),
@@ -48,18 +48,20 @@ class ConfigPage extends StatelessWidget {
     );
   }
 
+  /// 🔹 Standardized button style with dynamic text color
   Widget _buildConfigButton({
     required IconData icon,
     required String label,
+    required Color textColor, // Text color parameter
     required VoidCallback onPressed,
   }) {
     return ElevatedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(label),
+      icon: Icon(icon, color: textColor),
+      label: Text(label, style: TextStyle(color: textColor)),
       style: ElevatedButton.styleFrom(
-        //foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

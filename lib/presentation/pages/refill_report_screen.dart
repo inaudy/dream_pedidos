@@ -9,13 +9,11 @@ import 'package:intl/intl.dart';
 class RefillReportPage extends StatelessWidget {
   final StockRepository stockRepository;
 
-  // Pass in the StockRepository as a dependency
-  RefillReportPage({Key? key, required this.stockRepository}) : super(key: key);
+  const RefillReportPage({Key? key, required this.stockRepository})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    context.read<StockManagementBloc>().add(LoadStockEvent());
-
     return Scaffold(
       body: BlocBuilder<StockManagementBloc, StockManagementState>(
         builder: (context, state) {
@@ -24,7 +22,28 @@ class RefillReportPage extends StatelessWidget {
           } else if (state is StockError) {
             return _buildErrorMessage(state.message);
           } else if (state is StockLoaded) {
-            return _buildStockList(context, state.stockItems);
+            // 🔹 **Filter out only items that need refilling**
+            final filteredStockItems = state.stockItems
+                .where((item) =>
+                        item.actualStock <=
+                            item
+                                .minimumLevel && // 🔹 If stock is at or below min, order
+                        !(item.actualStock == item.minimumLevel &&
+                            item.minimumLevel ==
+                                item.maximumLevel) // 🔹 EXCLUDE cases where min == max == actual
+                    )
+                .toList();
+
+            if (filteredStockItems.isEmpty) {
+              return const Center(
+                child: Text(
+                  'No hay productos para reponer',
+                  style: TextStyle(fontSize: 16),
+                ),
+              );
+            }
+
+            return _buildStockList(context, filteredStockItems);
           }
           return const Center(child: Text('Sin datos disponibles.'));
         },
@@ -33,6 +52,7 @@ class RefillReportPage extends StatelessWidget {
     );
   }
 
+  /// 🔹 Show error messages
   Widget _buildErrorMessage(String? message) {
     return Center(
       child: Text(
@@ -43,17 +63,9 @@ class RefillReportPage extends StatelessWidget {
     );
   }
 
+  /// 🔹 Build stock list with filtered items
   Widget _buildStockList(BuildContext context, List<StockItem> stockItems) {
     final categorizedData = _categorizeStockItems(stockItems);
-
-    if (categorizedData.isEmpty) {
-      return const Center(
-        child: Text(
-          'No hay nada para reponer',
-          style: TextStyle(fontSize: 16),
-        ),
-      );
-    }
 
     return ListView(
       children: categorizedData.keys.map((category) {
@@ -63,6 +75,7 @@ class RefillReportPage extends StatelessWidget {
     );
   }
 
+  /// 🔹 Build categories
   Widget _buildCategorySection(
       BuildContext context, String category, List<StockItem> items) {
     return Column(
@@ -91,8 +104,13 @@ class RefillReportPage extends StatelessWidget {
     );
   }
 
+  /// 🔹 Build each stock item with text input and selection
   Widget _buildStockItem(BuildContext context, StockItem item) {
+    final String itemKey = item.itemName;
     final refillQuantity = item.maximumLevel - item.actualStock;
+    final TextEditingController controller = TextEditingController(
+      text: NumberFormat('#.#').format(refillQuantity).toString(),
+    );
 
     return BlocBuilder<ItemSelectionCubit, ItemSelectionState>(
       builder: (context, state) {
@@ -101,28 +119,44 @@ class RefillReportPage extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          child: CheckboxListTile(
-            value: isSelected,
-            onChanged: (selected) {
-              if (selected == true) {
-                context.read<ItemSelectionCubit>().selectItem(item);
-              } else {
-                context.read<ItemSelectionCubit>().deselectItem(item);
-              }
-            },
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            leading: SizedBox(
+              width: 50, height: 40, // Fixed width for the refill quantity
+              child: TextField(
+                controller: controller,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                textAlign: TextAlign.center,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(vertical: 2),
+                ),
+                onChanged: (value) {
+                  context.read<ItemSelectionCubit>().updateItemQuantity(
+                        itemKey,
+                        double.tryParse(value) ?? 0,
+                      );
+                },
+              ),
+            ),
             title: Text(
               item.itemName,
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              'Actual: ${NumberFormat('#.#').format(item.actualStock)}\nMin: ${NumberFormat('#.#').format(item.minimumLevel)}\nMax: ${NumberFormat('#.#').format(item.maximumLevel)}',
+              'Actual:${NumberFormat('#.#').format(item.actualStock)} | Min: ${NumberFormat('#.#').format(item.minimumLevel)} | Max: ${NumberFormat('#.#').format(item.maximumLevel)}',
+              style: const TextStyle(fontSize: 12),
             ),
-            secondary: Text(
-              NumberFormat('#.#').format(refillQuantity),
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+            trailing: Checkbox(
+              value: isSelected,
+              onChanged: (selected) {
+                if (selected == true) {
+                  context.read<ItemSelectionCubit>().selectItem(item);
+                } else {
+                  context.read<ItemSelectionCubit>().deselectItem(item);
+                }
+              },
             ),
           ),
         );
@@ -130,6 +164,7 @@ class RefillReportPage extends StatelessWidget {
     );
   }
 
+  /// 🔹 Bottom bar to submit selected items
   Widget _buildBottomBar(BuildContext context) {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
@@ -141,7 +176,7 @@ class RefillReportPage extends StatelessWidget {
           children: [
             TextButton.icon(
               icon: const Icon(Icons.send),
-              label: const Text('Enviar'),
+              label: const Text('Enviar Selección'),
               onPressed: () => _bulkUpdateStock(context),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.blue,
@@ -153,20 +188,7 @@ class RefillReportPage extends StatelessWidget {
     );
   }
 
-  Map<String, List<StockItem>> _categorizeStockItems(
-      List<StockItem> stockItems) {
-    final refillItems = stockItems.where((item) {
-      return item.actualStock < item.minimumLevel;
-    });
-
-    final Map<String, List<StockItem>> categorized = {};
-    for (var item in refillItems) {
-      final category = item.category;
-      categorized.putIfAbsent(category, () => []).add(item);
-    }
-    return categorized;
-  }
-
+  /// 🔹 Update stock for selected items
   Future<void> _bulkUpdateStock(BuildContext context) async {
     final itemSelectionCubit = context.read<ItemSelectionCubit>();
     final stockBloc = context.read<StockManagementBloc>();
@@ -177,21 +199,51 @@ class RefillReportPage extends StatelessWidget {
       return;
     }
 
+    List<StockItem> updatedItems = [];
+
     for (final item in selectedItems) {
-      final updatedItem = item.copyWith(actualStock: item.maximumLevel);
+      final newQuantity = itemSelectionCubit.state.quantities[item.itemName] ??
+          (item.maximumLevel - item.actualStock);
+
+      final updatedStock = item.actualStock + newQuantity;
+
+      if (updatedStock < item.maximumLevel) {
+        updatedItems.add(item.copyWith(actualStock: updatedStock));
+      }
+    }
+
+    for (final updatedItem in updatedItems) {
       await stockRepository.updateStockItem(updatedItem);
     }
 
     itemSelectionCubit.clearSelection();
-    stockBloc.add(LoadStockEvent());
+    stockBloc.add(LoadStockEvent()); // 🔹 Reload stock to reflect changes
+
     if (context.mounted) {
       _showSnackBar(context, 'Stock actualizado para los items seleccionados');
     }
   }
 
+  /// 🔹 Show Snackbar messages
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  /// 🔹 Categorize stock items
+  Map<String, List<StockItem>> _categorizeStockItems(
+      List<StockItem> stockItems) {
+    final categorized = <String, List<StockItem>>{};
+
+    for (var item in stockItems) {
+      final category = item.category.isEmpty ? 'Sin Categoría' : item.category;
+      if (!categorized.containsKey(category)) {
+        categorized[category] = [];
+      }
+      categorized[category]!.add(item);
+    }
+
+    return categorized;
   }
 }

@@ -1,55 +1,42 @@
 import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
 import 'package:dream_pedidos/data/models/stock_item.dart';
+import 'package:equatable/equatable.dart';
 
-// State for ItemSelectionCubit
-class ItemSelectionState extends Equatable {
-  final List<StockItem> selectedItems;
+part 'item_selection_state.dart';
 
-  const ItemSelectionState({this.selectedItems = const []});
-
-  ItemSelectionState copyWith({List<StockItem>? selectedItems}) {
-    return ItemSelectionState(
-      selectedItems: selectedItems ?? this.selectedItems,
-    );
-  }
-
-  @override
-  List<Object?> get props => [selectedItems];
-}
-
-// Cubit for managing item selection
 class ItemSelectionCubit extends Cubit<ItemSelectionState> {
-  ItemSelectionCubit() : super(const ItemSelectionState());
+  ItemSelectionCubit() : super(ItemSelectionState());
 
-  // Select an item
+  /// 🔹 Selects an item and tracks its refill quantity
   void selectItem(StockItem item) {
-    if (!state.selectedItems.contains(item)) {
-      final updatedItems = List<StockItem>.from(state.selectedItems)..add(item);
-      emit(state.copyWith(selectedItems: updatedItems));
-    }
+    final updatedSelection = Set<StockItem>.from(state.selectedItems)
+      ..add(item);
+
+    emit(state.copyWith(selectedItems: updatedSelection));
   }
 
-  // Deselect an item
+  /// 🔹 Deselects an item and removes its refill quantity
   void deselectItem(StockItem item) {
-    if (state.selectedItems.contains(item)) {
-      final updatedItems = List<StockItem>.from(state.selectedItems)
-        ..remove(item);
-      emit(state.copyWith(selectedItems: updatedItems));
-    }
+    final updatedSelection = Set<StockItem>.from(state.selectedItems)
+      ..remove(item);
+
+    final updatedQuantities = Map<String, double>.from(state.quantities)
+      ..remove(item.itemName);
+
+    emit(state.copyWith(
+        selectedItems: updatedSelection, quantities: updatedQuantities));
   }
 
-  // Toggle item selection
-  void toggleItemSelection(StockItem item) {
-    if (state.selectedItems.contains(item)) {
-      deselectItem(item);
-    } else {
-      selectItem(item);
-    }
+  /// 🔹 Updates the refill quantity for a selected item
+  void updateItemQuantity(String itemName, double quantity) {
+    final updatedQuantities = Map<String, double>.from(state.quantities);
+    updatedQuantities[itemName] = quantity;
+
+    emit(state.copyWith(quantities: updatedQuantities));
   }
 
-  // Clear all selections
+  /// 🔹 Clears selection and refill quantities after submission
   void clearSelection() {
-    emit(state.copyWith(selectedItems: []));
+    emit(ItemSelectionState()); // Reset to initial state
   }
 }
