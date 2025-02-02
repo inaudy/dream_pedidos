@@ -1,8 +1,10 @@
 import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
+import 'package:dream_pedidos/presentation/cubit/edit_stock_cubit.dart';
 import 'package:dream_pedidos/presentation/cubit/stock_search_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 
 class StockManagePage extends StatelessWidget {
@@ -14,24 +16,25 @@ class StockManagePage extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 🔹 Listen for StockLoaded updates after sync/upload
+          // Listen for StockLoaded updates after sync/upload.
           BlocListener<StockManagementBloc, StockManagementState>(
             listenWhen: (previous, current) {
-              // Only show snackbar when stockItems change, not when searching
+              // Only show a snackbar when stockItems change (not during search).
               return previous is! StockLoaded ||
                   previous.stockItems != (current as StockLoaded).stockItems;
             },
             listener: (context, state) {
               if (state is StockLoaded) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message ?? 'Stock actualizado')),
+                  SnackBar(
+                    content: Text(state.message ?? 'Stock actualizado'),
+                  ),
                 );
               }
             },
             child: _buildSearchBar(context),
           ),
-
-          // 🔹 Stock List (Filtered & Categorized)
+          // Stock List (Filtered & Categorized)
           Expanded(
             child: BlocBuilder<StockManagementBloc, StockManagementState>(
               builder: (context, stockState) {
@@ -40,10 +43,8 @@ class StockManagePage extends StatelessWidget {
                 } else if (stockState is StockLoaded) {
                   final searchQuery =
                       context.watch<StockSearchCubit>().state.toLowerCase();
-
                   final filteredStock =
                       _applySearchFilter(stockState.stockItems, searchQuery);
-
                   return _buildCategorizedList(context, filteredStock);
                 } else if (stockState is StockError) {
                   return Center(
@@ -62,14 +63,14 @@ class StockManagePage extends StatelessWidget {
     );
   }
 
-  /// 🔹 Search Bar (Toggles Visibility)
+  /// Build the search bar that toggles its visibility.
   Widget _buildSearchBar(BuildContext context) {
     return BlocBuilder<StockManagementBloc, StockManagementState>(
       builder: (context, state) {
         if (state is StockLoaded) {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            height: state.isSearchVisible ? 50 : 0, // Animate height
+            height: state.isSearchVisible ? 50 : 0,
             padding: state.isSearchVisible
                 ? const EdgeInsets.all(8)
                 : EdgeInsets.zero,
@@ -98,24 +99,21 @@ class StockManagePage extends StatelessWidget {
     );
   }
 
-  /// 🔹 Apply search filtering logic
+  /// Apply search filtering logic.
   List<StockItem> _applySearchFilter(
       List<StockItem> stockItems, String searchQuery) {
     if (searchQuery.isEmpty) return stockItems;
-
     final queryWords = searchQuery.toLowerCase().split(' ');
-
     return stockItems.where((item) {
       final itemName = item.itemName.toLowerCase();
       return queryWords.every((word) => itemName.contains(word));
     }).toList();
   }
 
-  /// 🔹 Build categorized stock list
+  /// Build categorized stock list.
   Widget _buildCategorizedList(
       BuildContext context, List<StockItem> stockItems) {
     final categorizedData = _categorizeStockItems(stockItems);
-
     if (categorizedData.isEmpty) {
       return const Center(
         child: Text(
@@ -124,7 +122,6 @@ class StockManagePage extends StatelessWidget {
         ),
       );
     }
-
     return ListView(
       children: categorizedData.keys.map((category) {
         final items = categorizedData[category]!;
@@ -133,7 +130,7 @@ class StockManagePage extends StatelessWidget {
     );
   }
 
-  /// 🔹 Build individual category section
+  /// Build an individual category section.
   Widget _buildCategorySection(
       BuildContext context, String category, List<StockItem> items) {
     return Column(
@@ -162,37 +159,112 @@ class StockManagePage extends StatelessWidget {
     );
   }
 
-  /// 🔹 Build individual stock item
+  /// Build an individual stock item with a slide-to-edit action.
   Widget _buildStockItem(BuildContext context, StockItem item) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      elevation: 2.0,
-      child: ListTile(
-        title: Text(
-          item.itemName,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          'Mínimo: ${NumberFormat('#.#').format(item.minimumLevel)} | '
-          'Máximo: ${NumberFormat('#.#').format(item.maximumLevel)}',
-        ),
-        leading: Text(
-          NumberFormat('#.#').format(item.actualStock),
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+    // Capture the parent's context that has global providers.
+    final globalContext = context;
+    return Slidable(
+      key: ValueKey(item.itemName),
+      startActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.25,
+        children: [
+          SlidableAction(
+            onPressed: (ctx) {
+              // Use the parent's context (globalContext) for showDialog.
+              showDialog(
+                context: globalContext,
+                builder: (BuildContext dialogContext) {
+                  return BlocProvider<StockItemEditCubit>(
+                    create: (_) => StockItemEditCubit(item),
+                    // Wrap AlertDialog in a Builder so its context is under the BlocProvider.
+                    child: Builder(
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text(item.itemName),
+                          content: BlocBuilder<StockItemEditCubit,
+                              StockItemEditState>(
+                            builder: (context, state) {
+                              return TextFormField(
+                                initialValue: NumberFormat('#.#')
+                                    .format(state.actualStock),
+                                decoration: const InputDecoration(
+                                  labelText: 'Actual Stock',
+                                ),
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) => context
+                                    .read<StockItemEditCubit>()
+                                    .actualStockChanged(value),
+                              );
+                            },
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(dialogContext).pop();
+                              },
+                              child: const Text('Salir'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                final updatedItem = StockItem(
+                                  itemName: item.itemName,
+                                  minimumLevel: item.minimumLevel,
+                                  maximumLevel: item.maximumLevel,
+                                  actualStock: context
+                                      .read<StockItemEditCubit>()
+                                      .state
+                                      .actualStock,
+                                  category: item.category,
+                                );
+                                // Dispatch the update event to the global StockManagementBloc.
+                                globalContext
+                                    .read<StockManagementBloc>()
+                                    .add(UpdateStockItemEvent(updatedItem));
+                                Navigator.of(dialogContext).pop();
+                              },
+                              child: const Text('Guardar'),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            icon: Icons.edit,
+            label: 'Edit',
+          ),
+        ],
+      ),
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        elevation: 2.0,
+        child: ListTile(
+          title: Text(
+            item.itemName,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            'Mínimo: ${item.minimumLevel} | Máximo: ${item.maximumLevel}',
+          ),
+          leading: Text(
+            '${item.actualStock}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
       ),
     );
   }
 
-  /// 🔹 Categorize stock items by category
+  /// Categorize stock items by category.
   Map<String, List<StockItem>> _categorizeStockItems(
       List<StockItem> stockItems) {
     final categorized = <String, List<StockItem>>{};
-
     for (var item in stockItems) {
       final category = item.category.isEmpty ? 'Sin Categoría' : item.category;
       if (!categorized.containsKey(category)) {
@@ -200,7 +272,6 @@ class StockManagePage extends StatelessWidget {
       }
       categorized[category]!.add(item);
     }
-
     return categorized;
   }
 }

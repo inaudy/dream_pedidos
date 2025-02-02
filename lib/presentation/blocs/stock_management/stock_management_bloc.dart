@@ -46,7 +46,31 @@ class StockManagementBloc
     }
   }
 
-  /// 🔹 Fix: Preserve `isSearchVisible` after updating stock
+  Future<void> _onUpdateStockItem(
+      UpdateStockItemEvent event, Emitter<StockManagementState> emit) async {
+    if (state is StockLoaded) {
+      try {
+        // Call your repository update method.
+        // Since you differentiate items by text name,
+        // ensure that updateStockItem in your repository uses the item's name.
+        await stockRepository.updateStockItem(event.updatedItem);
+
+        // Reload the list of stock items after the update.
+        final updatedStock = await stockRepository.getAllStockItems();
+
+        final currentState = state as StockLoaded;
+        emit(StockLoaded(
+          updatedStock,
+          message: 'Stock updated successfully.',
+          isSearchVisible: currentState.isSearchVisible, // Preserve UI state
+        ));
+      } catch (e) {
+        emit(StockError('Error updating stock: ${e.toString()}'));
+      }
+    }
+  }
+
+  /*/// 🔹 Fix: Preserve `isSearchVisible` after updating stock
   Future<void> _onUpdateStockItem(
       UpdateStockItemEvent event, Emitter<StockManagementState> emit) async {
     if (state is StockLoaded) {
@@ -64,7 +88,7 @@ class StockManagementBloc
         emit(StockError('Error updating stock: ${e.toString()}'));
       }
     }
-  }
+  }*/
 
   /// 🔹 Fix: Preserve `isSearchVisible` after resetting stock
   Future<void> _onDeleteAllStock(

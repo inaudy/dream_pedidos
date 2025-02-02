@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/data/models/refill_history_item.dart';
+import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:equatable/equatable.dart';
 
 part 'refill_history_event.dart';
@@ -8,8 +9,10 @@ part 'refill_history_state.dart';
 
 class RefillHistoryBloc extends Bloc<RefillHistoryEvent, RefillHistoryState> {
   final StockRepository _stockRepository;
+  final StockManagementBloc _stockManagementBloc;
 
-  RefillHistoryBloc(this._stockRepository) : super(RefillHistoryLoading()) {
+  RefillHistoryBloc(this._stockRepository, this._stockManagementBloc)
+      : super(RefillHistoryLoading()) {
     on<LoadRefillHistoryEvent>(_onLoadRefillHistory);
     on<RevertRefillEvent>(_onRevertRefill);
   }
@@ -32,7 +35,8 @@ class RefillHistoryBloc extends Bloc<RefillHistoryEvent, RefillHistoryState> {
     try {
       await _stockRepository.revertRefill(event.refillId);
       final updatedHistory = await _stockRepository.getRefillHistory();
-      emit(RefillHistoryLoaded(updatedHistory)); // Refresh UI
+      emit(RefillHistoryLoaded(updatedHistory)); // Refresh U
+      _stockManagementBloc.add(LoadStockEvent()); // Refresh stock
     } catch (e) {
       emit(RefillHistoryError("Error reverting refill: ${e.toString()}"));
     }

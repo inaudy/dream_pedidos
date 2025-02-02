@@ -58,8 +58,11 @@ class MyApp extends StatelessWidget {
           ),
           BlocProvider(create: (context) => SalesParserBloc()),
           BlocProvider(create: (context) => ItemSelectionCubit()),
+          BlocProvider(create: (context) => ItemSelectionCubit()),
           BlocProvider(create: (context) => BottomNavcubit()),
-          BlocProvider(create: (context) => RefillHistoryBloc(stockRepository)),
+          BlocProvider(
+              create: (context) =>
+                  RefillHistoryBloc(stockRepository, stockManagementBloc)),
         ],
         child: HomePage(
           stockRepository: stockRepository,
