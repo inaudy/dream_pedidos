@@ -1,5 +1,6 @@
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
+import 'package:dream_pedidos/presentation/pages/refill_history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/bottom_nav_cubit.dart';
@@ -17,6 +18,7 @@ class HomePage extends StatelessWidget {
         const UploadSalesPage(),
         const StockManagePage(),
         RefillReportPage(stockRepository: stockRepository),
+        const RefillHistoryPage(),
         const ConfigPage(),
       ];
 
@@ -40,6 +42,7 @@ class HomePage extends StatelessWidget {
               'VENTAS',
               'ALMACEN',
               'PEDIDO',
+              'HISTORIAL DE REPOSICION',
               'CONFIGURACION',
             ];
             return Text(
@@ -116,9 +119,15 @@ class HomePage extends StatelessWidget {
                 ),
                 _buildDrawerItem(
                   context,
+                  icon: Icons.list,
+                  title: 'Historial de Reposición',
+                  pageIndex: 3,
+                ),
+                _buildDrawerItem(
+                  context,
                   icon: Icons.settings,
                   title: 'Configuración',
-                  pageIndex: 3,
+                  pageIndex: 4,
                 ),
               ],
             ),

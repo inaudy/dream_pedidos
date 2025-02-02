@@ -1,6 +1,7 @@
 import 'package:dream_pedidos/data/repositories/recipe_repository.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/presentation/blocs/recipe_parser_bloc/recipe_parser_bloc.dart';
+import 'package:dream_pedidos/presentation/blocs/refill_history_bloc/refill_history_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/sales_parser_bloc/sales_parser_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_sync_bloc/stock_sync_bloc.dart';
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
           BlocProvider(create: (context) => SalesParserBloc()),
           BlocProvider(create: (context) => ItemSelectionCubit()),
           BlocProvider(create: (context) => BottomNavcubit()),
+          BlocProvider(create: (context) => RefillHistoryBloc(stockRepository)),
         ],
         child: HomePage(
           stockRepository: stockRepository,

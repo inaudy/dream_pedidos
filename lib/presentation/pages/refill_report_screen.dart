@@ -13,6 +13,7 @@ class RefillReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.read<StockManagementBloc>().add(LoadStockEvent());
     return Scaffold(
       body: BlocBuilder<StockManagementBloc, StockManagementState>(
         builder: (context, state) {
@@ -206,9 +207,12 @@ class RefillReportPage extends StatelessWidget {
 
       final updatedStock = item.actualStock + newQuantity;
 
-      if (updatedStock < item.maximumLevel) {
-        updatedItems.add(item.copyWith(actualStock: updatedStock));
-      }
+      //if (updatedStock <= item.maximumLevel) {
+      updatedItems.add(item.copyWith(actualStock: updatedStock));
+
+      //save the refill record
+      await stockRepository.saveRefillHistory(item.itemName, newQuantity);
+      //}
     }
 
     for (final updatedItem in updatedItems) {

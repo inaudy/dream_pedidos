@@ -1,5 +1,6 @@
 // Move this file to: lib/data/sources/local/stock_database.dart
 
+import 'package:dream_pedidos/data/models/refill_history_item.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -54,7 +55,16 @@ class StockDatabase implements StockRepository {
             traspaso TEXT,
             ean_code TEXT
           )
+          ''',
           '''
+           CREATE TABLE refill_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_name TEXT NOT NULL,
+            refill_quantity REAL NOT NULL,
+            refill_date TEXT NOT NULL,
+            FOREIGN KEY (item_name) REFERENCES stock(item_name) ON DELETE CASCADE
+  )
+'''
         ];
 
         for (var query in tableDefinitions) {
@@ -74,6 +84,53 @@ class StockDatabase implements StockRepository {
         SELECT item_name, actual_stock, minimum_level, maximum_level, category, traspaso, ean_code FROM stock_backup
       ''');
     });
+  }
+
+  // 🔹 Save a refill entry to the history table
+  @override
+  Future<void> saveRefillHistory(String itemName, double quantity) async {
+    final db = await database;
+    await db.insert(
+      'refill_history',
+      {
+        'item_name': itemName,
+        'refill_quantity': quantity,
+        'refill_date': DateTime.now().toIso8601String(),
+      },
+    );
+  }
+
+// 🔹 Get all refill history
+  @override
+  Future<List<RefillHistoryItem>> getRefillHistory() async {
+    final db = await database;
+    final result =
+        await db.query('refill_history', orderBy: 'refill_date DESC');
+    return result.map((map) => RefillHistoryItem.fromMap(map)).toList();
+  }
+
+// 🔹 Revert a refill (Remove from history & Restore stock)
+  @override
+  Future<void> revertRefill(int refillId) async {
+    final db = await database;
+
+    // Get refill data
+    final result = await db
+        .query('refill_history', where: 'id = ?', whereArgs: [refillId]);
+
+    if (result.isNotEmpty) {
+      final itemName = result.first['item_name'] as String;
+      final quantity = result.first['refill_quantity'] as double;
+
+      // Restore stock
+      await db.rawUpdate(
+        'UPDATE stock SET actual_stock = actual_stock - ? WHERE item_name = ?',
+        [quantity, itemName],
+      );
+
+      // Delete from history
+      await db.delete('refill_history', where: 'id = ?', whereArgs: [refillId]);
+    }
   }
 
   @override
@@ -145,7 +202,7 @@ class StockDatabase implements StockRepository {
       'stock',
       item.toMap(),
       where: 'item_name = ?',
-      whereArgs: [item.itemName],
+      whereArgs: [item.itemName], // Ensure correct WHERE clause
     );
   }
 }
