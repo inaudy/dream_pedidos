@@ -1,5 +1,6 @@
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
+import 'package:dream_pedidos/presentation/pages/ean13_scanner_page.dart';
 import 'package:dream_pedidos/presentation/pages/refill_history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +9,7 @@ import 'package:dream_pedidos/presentation/pages/config.dart';
 import 'package:dream_pedidos/presentation/pages/refill_report_screen.dart';
 import 'package:dream_pedidos/presentation/pages/stock_screen.dart';
 import 'package:dream_pedidos/presentation/pages/upload_sales_screen.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class HomePage extends StatelessWidget {
   final StockRepository stockRepository;
@@ -71,6 +73,24 @@ class HomePage extends StatelessWidget {
                         context
                             .read<StockManagementBloc>()
                             .add(ToggleSearchEvent());
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.scanBarcode,
+                          color: Colors.white),
+                      onPressed: () async {
+                        final scannedCode = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const EAN13ScannerPage()),
+                        );
+
+                        if (scannedCode != null && scannedCode is String) {
+                          // Dispatch search event to StockManagementBloc
+                          context
+                              .read<StockManagementBloc>()
+                              .add(SearchStockByEANEvent(scannedCode));
+                        }
                       },
                     ),
                   ],

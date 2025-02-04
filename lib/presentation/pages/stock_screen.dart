@@ -12,54 +12,211 @@ class StockManagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Listen for StockLoaded updates after sync/upload.
-          BlocListener<StockManagementBloc, StockManagementState>(
-            listenWhen: (previous, current) {
-              // Only show a snackbar when stockItems change (not during search).
-              return previous is! StockLoaded ||
-                  previous.stockItems != (current as StockLoaded).stockItems;
-            },
-            listener: (context, state) {
-              if (state is StockLoaded) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message ?? 'Stock actualizado'),
-                  ),
-                );
+    return BlocListener<StockManagementBloc, StockManagementState>(
+      listener: (context, state) {
+        if (state is StockEditDialogState) {
+          _showStockEditDialog(context, state.stockItem);
+        }
+      },
+      child: Scaffold(
+        // Floating button to launch the scanner.
+        /*floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              // Launch the scanner page.
+              final scannedCode = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EAN13ScannerPage()),
+              );
+              if (scannedCode != null && scannedCode is String) {
+                // Search the loaded stock items from the StockManagementBloc state.
+                final currentState = context.read<StockManagementBloc>().state;
+                if (currentState is StockLoaded) {
+                  StockItem? matchingItem;
+                  try {
+                    matchingItem = currentState.stockItems.firstWhere(
+                      (item) =>
+                          item.eanCode != null &&
+                          item.eanCode!.trim() == scannedCode.trim(),
+                    );
+                  } catch (_) {
+                    matchingItem = null;
+                  }
+                  if (matchingItem != null) {
+                    // Open the edit dialog for the matching item.
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext dialogContext) {
+                        return BlocProvider<StockItemEditCubit>(
+                          create: (_) => StockItemEditCubit(matchingItem!),
+                          // Wrap AlertDialog in a Builder so its context is under the BlocProvider.
+                          child: Builder(
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text(matchingItem!.itemName),
+                                content: BlocBuilder<StockItemEditCubit,
+                                    StockItemEditState>(
+                                  builder: (context, state) {
+                                    return TextFormField(
+                                      initialValue: NumberFormat('#.#')
+                                          .format(state.actualStock),
+                                      decoration: const InputDecoration(
+                                        labelText: 'Actual Stock',
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (value) => context
+                                          .read<StockItemEditCubit>()
+                                          .actualStockChanged(value),
+                                    );
+                                  },
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(dialogContext).pop();
+                                    },
+                                    child: const Text('Salir'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      final updatedItem = StockItem(
+                                        itemName: matchingItem!.itemName,
+                                        minimumLevel: matchingItem.minimumLevel,
+                                        maximumLevel: matchingItem.maximumLevel,
+                                        actualStock: context
+                                            .read<StockItemEditCubit>()
+                                            .state
+                                            .actualStock,
+                                        category: matchingItem.category,
+                                        traspaso: matchingItem.traspaso,
+                                        eanCode: matchingItem.eanCode,
+                                      );
+                                      // Dispatch the update event to the StockManagementBloc.
+                                      context
+                                          .read<StockManagementBloc>()
+                                          .add(UpdateStockItemEvent(updatedItem));
+                                      Navigator.of(dialogContext).pop();
+                                    },
+                                    child: const Text('Guardar'),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  }
+                  // If no matching item is found, do nothing.
+                }
               }
             },
-            child: _buildSearchBar(context),
+            child: const Icon(LucideIcons.scanBarcode, size: 24),
           ),
-          // Stock List (Filtered & Categorized)
-          Expanded(
-            child: BlocBuilder<StockManagementBloc, StockManagementState>(
-              builder: (context, stockState) {
-                if (stockState is StockLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (stockState is StockLoaded) {
-                  final searchQuery =
-                      context.watch<StockSearchCubit>().state.toLowerCase();
-                  final filteredStock =
-                      _applySearchFilter(stockState.stockItems, searchQuery);
-                  return _buildCategorizedList(context, filteredStock);
-                } else if (stockState is StockError) {
-                  return Center(
-                    child: Text(
-                      'Error: ${stockState.message}',
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  );
-                }
-                return const Center(child: Text('No hay datos disponibles.'));
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,*/
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Listen for StockLoaded updates after sync/upload.
+            BlocListener<StockManagementBloc, StockManagementState>(
+              listenWhen: (previous, current) {
+                // Only act when stockItems change.
+                return previous is! StockLoaded ||
+                    previous.stockItems != (current as StockLoaded).stockItems;
               },
+              listener: (context, state) {
+                // (Optional) You can perform additional actions here when the stock updates.
+              },
+              child: _buildSearchBar(context),
             ),
-          ),
-        ],
+            // Stock List (Filtered & Categorized)
+            Expanded(
+              child: BlocBuilder<StockManagementBloc, StockManagementState>(
+                builder: (context, stockState) {
+                  if (stockState is StockLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (stockState is StockLoaded) {
+                    final searchQuery =
+                        context.watch<StockSearchCubit>().state.toLowerCase();
+                    final filteredStock =
+                        _applySearchFilter(stockState.stockItems, searchQuery);
+                    return _buildCategorizedList(context, filteredStock);
+                  } else if (stockState is StockError) {
+                    return Center(
+                      child: Text(
+                        'Error: ${stockState.message}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    );
+                  }
+                  return const Center(child: Text('No hay datos disponibles.'));
+                },
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showStockEditDialog(BuildContext context, StockItem item) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return BlocProvider(
+          create: (_) => StockItemEditCubit(item),
+          child: Builder(
+            builder: (context) {
+              return AlertDialog(
+                title: Text(item.itemName),
+                content: BlocBuilder<StockItemEditCubit, StockItemEditState>(
+                  builder: (context, state) {
+                    return TextFormField(
+                      initialValue: state.actualStock.toString(),
+                      decoration:
+                          const InputDecoration(labelText: 'Stock Actual'),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        context
+                            .read<StockItemEditCubit>()
+                            .actualStockChanged(value);
+                      },
+                    );
+                  },
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Cancelar'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final updatedItem = StockItem(
+                        itemName: item.itemName,
+                        minimumLevel: item.minimumLevel,
+                        maximumLevel: item.maximumLevel,
+                        actualStock: context
+                            .read<StockItemEditCubit>()
+                            .state
+                            .actualStock,
+                        category: item.category,
+                        traspaso: item.traspaso,
+                        eanCode: item.eanCode,
+                      );
+
+                      // Dispatch the update event to the Bloc
+                      context
+                          .read<StockManagementBloc>()
+                          .add(UpdateStockItemEvent(updatedItem));
+                      Navigator.pop(dialogContext);
+                    },
+                    child: const Text('Guardar'),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -216,6 +373,8 @@ class StockManagePage extends StatelessWidget {
                                       .state
                                       .actualStock,
                                   category: item.category,
+                                  traspaso: item.traspaso,
+                                  eanCode: item.eanCode,
                                 );
                                 // Dispatch the update event to the global StockManagementBloc.
                                 globalContext
