@@ -80,11 +80,15 @@ class StockDatabase implements StockRepository {
   Future<void> resetStockFromBackup() async {
     final db = await database;
     await db.transaction((txn) async {
-      await txn.execute('DELETE FROM stock');
+      await txn.execute('''
+      UPDATE stock 
+      SET actual_stock = maximum_level
+    ''');
+      /*await txn.execute('DELETE FROM stock');
       await txn.execute('''
         INSERT INTO stock (item_name, actual_stock, minimum_level, maximum_level, category, traspaso, ean_code)
         SELECT item_name, actual_stock, minimum_level, maximum_level, category, traspaso, ean_code, error_percentage FROM stock_backup
-      ''');
+      ''');*/
     });
   }
 
