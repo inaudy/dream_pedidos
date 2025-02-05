@@ -45,8 +45,7 @@ class StockItemEditCubit extends Cubit<StockItemEditState> {
           maximumLevel: stockItem.maximumLevel,
           actualStock: stockItem.actualStock,
           traspaso: stockItem.traspaso ?? '', // default to empty string if null
-          errorPercentage:
-              stockItem.errorPercentage ?? 0, // default to 0.0 if null
+          errorPercentage: stockItem.errorPercentage, // default to 0.0 if null
         ));
 
   void itemNameChanged(String newName) {

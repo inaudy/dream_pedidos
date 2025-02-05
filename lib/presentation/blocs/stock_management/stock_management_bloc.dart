@@ -10,7 +10,8 @@ class StockManagementBloc
     extends Bloc<StockManagementEvent, StockManagementState> {
   final StockRepository stockRepository;
 
-  StockManagementBloc(this.stockRepository) : super(StockManagementInitial()) {
+  StockManagementBloc(this.stockRepository)
+      : super(const StockManagementInitial()) {
     on<LoadStockEvent>(_onLoadStock);
     on<UpdateStockItemEvent>(_onUpdateStockItem);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
@@ -22,7 +23,7 @@ class StockManagementBloc
   /// 🔹 Load Stock Items
   Future<void> _onLoadStock(
       LoadStockEvent event, Emitter<StockManagementState> emit) async {
-    emit(StockLoading());
+    emit(const StockLoading());
     try {
       final stockItems = await stockRepository.getAllStockItems();
       emit(StockLoaded(
@@ -88,14 +89,15 @@ class StockManagementBloc
           category: '',
           traspaso: '',
           eanCode: '',
-          errorPercentage: 0.0,
+          errorPercentage: 0,
         ),
       );
 
       if (matchingItem.itemName.isNotEmpty) {
         emit(StockEditDialogState(matchingItem));
       } else {
-        emit(StockError('No se encontró ningún producto con ese código.'));
+        emit(
+            const StockError('No se encontró ningún producto con ese código.'));
       }
     }
   }
@@ -117,7 +119,7 @@ class StockManagementBloc
   /// 🔹 Delete All Stock Items
   Future<void> _onDeleteAllStock(
       DeleteAllStockEvent event, Emitter<StockManagementState> emit) async {
-    emit(StockLoading());
+    emit(const StockLoading());
     try {
       await stockRepository.resetStockFromBackup();
       final updatedStock = await stockRepository.getAllStockItems();

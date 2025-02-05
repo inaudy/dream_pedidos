@@ -42,7 +42,7 @@ class StockDatabase implements StockRepository {
             category TEXT NOT NULL,
             traspaso TEXT,
             ean_code TEXT,
-            error_percentage REAL DEFAULT 0.0 
+            error_percentage INTEGER DEFAULT 0
           )
           ''',
           '''
@@ -55,7 +55,7 @@ class StockDatabase implements StockRepository {
             category TEXT NOT NULL,
             traspaso TEXT,
             ean_code TEXT,
-            error_percentage REAL DEFAULT 0.0 
+            error_percentage INTEGER DEFAULT 0 
           )
           ''',
           '''
@@ -179,7 +179,7 @@ class StockDatabase implements StockRepository {
   }
 
   /// Get error percentage for a specific item (returns 0 if no error is assigned)
-  Future<double> getErrorPercentage(String itemName) async {
+  Future<int> getErrorPercentage(String itemName) async {
     final db = await database;
     final result = await db.query(
       'stock',
@@ -189,9 +189,9 @@ class StockDatabase implements StockRepository {
     );
 
     if (result.isNotEmpty) {
-      return (result.first['error_percentage'] as num?)?.toDouble() ?? 0.0;
+      return (result.first['error_percentage'] as num?)?.toInt() ?? 0;
     }
-    return 0.0; // Default is 0% error if not found
+    return 0; // Default is 0% error if not found
   }
 
   @override

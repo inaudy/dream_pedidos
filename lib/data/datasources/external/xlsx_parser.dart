@@ -63,7 +63,7 @@ class XLSXParser {
         category: row[4]?.value.toString() ?? '',
         traspaso: row[5]?.value.toString() ?? '',
         eanCode: row[6]?.value.toString() ?? '',
-        errorPercentage: double.tryParse(row[7]?.value.toString() ?? '0') ?? 0,
+        errorPercentage: int.tryParse(row[7]?.value.toString() ?? '0') ?? 0,
       );
     }).toList();
   }

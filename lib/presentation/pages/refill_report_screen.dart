@@ -106,12 +106,12 @@ class RefillReportPage extends StatelessWidget {
     // Compute the default refill quantity.
     // If the user already modified it via the cubit, use that value.
     final itemSelectionState = context.watch<ItemSelectionCubit>().state;
-    final double errorPercentage = item.errorPercentage;
+    final int errorPercentage = item.errorPercentage;
     final double refillQuantity =
         itemSelectionState.quantities[item.itemName] ??
             (item.maximumLevel - item.actualStock);
     final double adjustedRefillQuantity = errorPercentage > 0
-        ? refillQuantity * (1 + (errorPercentage))
+        ? refillQuantity * (1 + (errorPercentage / 100))
         : refillQuantity;
     // Capture the parent's context (global context) for accessing global providers.
     final globalContext = context;

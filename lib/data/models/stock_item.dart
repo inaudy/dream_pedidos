@@ -6,7 +6,7 @@ class StockItem {
   final String category;
   final String? traspaso;
   final String? eanCode;
-  final double errorPercentage;
+  final int errorPercentage;
 
   StockItem({
     required this.itemName,
@@ -28,7 +28,7 @@ class StockItem {
     String? category,
     String? traspaso,
     String? eanCode,
-    double? errorPercentage,
+    int? errorPercentage,
   }) {
     return StockItem(
       itemName: itemName ?? this.itemName,
@@ -67,7 +67,7 @@ class StockItem {
       traspaso: map['traspaso'],
       eanCode: map['ean_code'],
       errorPercentage:
-          (map['error_percentage'] as num?)?.toDouble() ?? 0.0, // Default 0.0%
+          (map['error_percentage'] as num?)?.toInt() ?? 0, // Default 0.0%
     );
   }
 
