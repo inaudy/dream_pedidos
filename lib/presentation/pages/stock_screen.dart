@@ -249,16 +249,36 @@ class StockManagePage extends StatelessWidget {
                           content: BlocBuilder<StockItemEditCubit,
                               StockItemEditState>(
                             builder: (context, state) {
-                              return TextFormField(
-                                initialValue: NumberFormat('#.#')
-                                    .format(state.actualStock),
-                                decoration: const InputDecoration(
-                                  labelText: 'Actual Stock',
+                              return SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Field for editing Actual Stock.
+                                    TextFormField(
+                                      initialValue: NumberFormat('#.#')
+                                          .format(state.actualStock),
+                                      decoration: const InputDecoration(
+                                        labelText: 'Actual Stock',
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (value) => context
+                                          .read<StockItemEditCubit>()
+                                          .actualStockChanged(value),
+                                    ),
+                                    // Field for editing Error Percentage.
+                                    TextFormField(
+                                      initialValue:
+                                          state.errorPercentage.toString(),
+                                      decoration: const InputDecoration(
+                                        labelText: 'Error %',
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (value) => context
+                                          .read<StockItemEditCubit>()
+                                          .errorPercentageChanged(value),
+                                    ),
+                                  ],
                                 ),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) => context
-                                    .read<StockItemEditCubit>()
-                                    .actualStockChanged(value),
                               );
                             },
                           ),
@@ -280,9 +300,15 @@ class StockManagePage extends StatelessWidget {
                                       .state
                                       .actualStock,
                                   category: item.category,
-                                  traspaso: item.traspaso,
+                                  traspaso: context
+                                      .read<StockItemEditCubit>()
+                                      .state
+                                      .traspaso,
                                   eanCode: item.eanCode,
-                                  errorPercentage: item.errorPercentage,
+                                  errorPercentage: context
+                                      .read<StockItemEditCubit>()
+                                      .state
+                                      .errorPercentage,
                                 );
                                 // Dispatch the update event to the global StockManagementBloc.
                                 globalContext
@@ -317,7 +343,7 @@ class StockManagePage extends StatelessWidget {
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
           subtitle: Text(
-            'Mínimo: ${item.minimumLevel} | Máximo: ${item.maximumLevel}',
+            'Mínimo: ${item.minimumLevel} | Máximo: ${item.maximumLevel} | Trasp: ${item.traspaso} | %Error: ${item.errorPercentage}',
           ),
           leading: Text(
             '${item.actualStock}',

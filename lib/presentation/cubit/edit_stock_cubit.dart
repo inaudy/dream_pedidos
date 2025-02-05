@@ -6,12 +6,16 @@ class StockItemEditState {
   final double minimumLevel;
   final double maximumLevel;
   final double actualStock;
+  final String traspaso;
+  final int errorPercentage;
 
   StockItemEditState({
     required this.itemName,
     required this.minimumLevel,
     required this.maximumLevel,
     required this.actualStock,
+    required this.traspaso,
+    required this.errorPercentage,
   });
 
   StockItemEditState copyWith({
@@ -19,12 +23,16 @@ class StockItemEditState {
     double? minimumLevel,
     double? maximumLevel,
     double? actualStock,
+    String? traspaso,
+    int? errorPercentage,
   }) {
     return StockItemEditState(
       itemName: itemName ?? this.itemName,
       minimumLevel: minimumLevel ?? this.minimumLevel,
       maximumLevel: maximumLevel ?? this.maximumLevel,
       actualStock: actualStock ?? this.actualStock,
+      traspaso: traspaso ?? this.traspaso,
+      errorPercentage: errorPercentage ?? this.errorPercentage,
     );
   }
 }
@@ -36,6 +44,9 @@ class StockItemEditCubit extends Cubit<StockItemEditState> {
           minimumLevel: stockItem.minimumLevel,
           maximumLevel: stockItem.maximumLevel,
           actualStock: stockItem.actualStock,
+          traspaso: stockItem.traspaso ?? '', // default to empty string if null
+          errorPercentage:
+              stockItem.errorPercentage ?? 0, // default to 0.0 if null
         ));
 
   void itemNameChanged(String newName) {
@@ -61,5 +72,14 @@ class StockItemEditCubit extends Cubit<StockItemEditState> {
     if (parsed != null) {
       emit(state.copyWith(actualStock: parsed));
     }
+  }
+
+  void traspasoChanged(String newTraspaso) {
+    emit(state.copyWith(traspaso: newTraspaso));
+  }
+
+  void errorPercentageChanged(String newError) {
+    final parsed = int.tryParse(newError) ?? state.errorPercentage;
+    emit(state.copyWith(errorPercentage: parsed));
   }
 }

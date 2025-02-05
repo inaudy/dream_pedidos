@@ -1,24 +1,31 @@
 part of 'stock_management_bloc.dart';
 
+/// 🔹 Base Class for All Stock Management States
 abstract class StockManagementState extends Equatable {
+  const StockManagementState();
+
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 /// 🔹 Initial State
-class StockManagementInitial extends StockManagementState {}
+class StockManagementInitial extends StockManagementState {
+  const StockManagementInitial();
+}
 
 /// 🔹 Loading State
-class StockLoading extends StockManagementState {}
+class StockLoading extends StockManagementState {
+  const StockLoading();
+}
 
-/// 🔹 Stock Loaded
+/// 🔹 Stock Loaded (Main State)
 class StockLoaded extends StockManagementState {
   final List<StockItem> stockItems;
   final String message;
   final bool isSearchVisible;
   final String searchQuery;
 
-  StockLoaded(
+  const StockLoaded(
     this.stockItems, {
     this.message = '',
     this.isSearchVisible = false,
@@ -26,24 +33,28 @@ class StockLoaded extends StockManagementState {
   });
 
   @override
-  List<Object> get props => [stockItems, message, isSearchVisible, searchQuery];
+  List<Object?> get props =>
+      [stockItems, message, isSearchVisible, searchQuery];
 }
 
-/// New State: Triggers Edit Dialog when barcode is matched
+/// 🔹 State for Showing Edit Dialog When Barcode is Matched
 class StockEditDialogState extends StockManagementState {
   final StockItem stockItem;
 
-  StockEditDialogState(this.stockItem);
+  const StockEditDialogState(this.stockItem);
 
   @override
-  List<Object> get props => [stockItem];
+  List<Object?> get props => [stockItem];
 }
+
+/// 🔹 **New State for Barcode Scanning Result**
 
 /// 🔹 Error State
 class StockError extends StockManagementState {
   final String message;
-  StockError(this.message);
+
+  const StockError(this.message);
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [message];
 }
