@@ -41,7 +41,8 @@ class StockDatabase implements StockRepository {
             maximum_level REAL NOT NULL,
             category TEXT NOT NULL,
             traspaso TEXT,
-            ean_code TEXT
+            ean_code TEXT,
+            error_percentage REAL DEFAULT 0.0 
           )
           ''',
           '''
@@ -53,7 +54,8 @@ class StockDatabase implements StockRepository {
             maximum_level REAL NOT NULL,
             category TEXT NOT NULL,
             traspaso TEXT,
-            ean_code TEXT
+            ean_code TEXT,
+            error_percentage REAL DEFAULT 0.0 
           )
           ''',
           '''
@@ -81,7 +83,7 @@ class StockDatabase implements StockRepository {
       await txn.execute('DELETE FROM stock');
       await txn.execute('''
         INSERT INTO stock (item_name, actual_stock, minimum_level, maximum_level, category, traspaso, ean_code)
-        SELECT item_name, actual_stock, minimum_level, maximum_level, category, traspaso, ean_code FROM stock_backup
+        SELECT item_name, actual_stock, minimum_level, maximum_level, category, traspaso, ean_code, error_percentage FROM stock_backup
       ''');
     });
   }
@@ -174,6 +176,22 @@ class StockDatabase implements StockRepository {
     final db = await database;
     final result = await db.query('stock');
     return result.map((map) => StockItem.fromMap(map)).toList();
+  }
+
+  /// Get error percentage for a specific item (returns 0 if no error is assigned)
+  Future<double> getErrorPercentage(String itemName) async {
+    final db = await database;
+    final result = await db.query(
+      'stock',
+      columns: ['error_percentage'],
+      where: 'item_name = ?',
+      whereArgs: [itemName],
+    );
+
+    if (result.isNotEmpty) {
+      return (result.first['error_percentage'] as num?)?.toDouble() ?? 0.0;
+    }
+    return 0.0; // Default is 0% error if not found
   }
 
   @override

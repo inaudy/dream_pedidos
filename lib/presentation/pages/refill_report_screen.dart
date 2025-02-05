@@ -106,9 +106,13 @@ class RefillReportPage extends StatelessWidget {
     // Compute the default refill quantity.
     // If the user already modified it via the cubit, use that value.
     final itemSelectionState = context.watch<ItemSelectionCubit>().state;
+    final double errorPercentage = item.errorPercentage;
     final double refillQuantity =
         itemSelectionState.quantities[item.itemName] ??
             (item.maximumLevel - item.actualStock);
+    final double adjustedRefillQuantity = errorPercentage > 0
+        ? refillQuantity * (1 + (errorPercentage))
+        : refillQuantity;
     // Capture the parent's context (global context) for accessing global providers.
     final globalContext = context;
     return Slidable(
@@ -178,7 +182,7 @@ class RefillReportPage extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-          leading: Text(NumberFormat('#.#').format(refillQuantity),
+          leading: Text(NumberFormat('#').format(adjustedRefillQuantity),
               style:
                   const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           title: Text(
@@ -248,8 +252,12 @@ class RefillReportPage extends StatelessWidget {
     for (final item in selectedItems) {
       final newQuantity = itemSelectionCubit.state.quantities[item.itemName] ??
           (item.maximumLevel - item.actualStock);
+      // Apply stored error percentage per item (skip if 0%)
+      final adjustedRefill = item.errorPercentage > 0
+          ? newQuantity * (1 + (item.errorPercentage / 100))
+          : newQuantity;
 
-      final updatedStock = item.actualStock + newQuantity;
+      final updatedStock = item.actualStock + adjustedRefill;
       updatedItems.add(item.copyWith(actualStock: updatedStock));
 
       // Save the refill record.

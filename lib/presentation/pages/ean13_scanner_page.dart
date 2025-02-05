@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class EAN13ScannerPage extends StatefulWidget {
-  const EAN13ScannerPage({Key? key}) : super(key: key);
+  const EAN13ScannerPage({super.key});
 
   @override
   _EAN13ScannerPageState createState() => _EAN13ScannerPageState();
@@ -14,8 +14,8 @@ class _EAN13ScannerPageState extends State<EAN13ScannerPage> {
   @override
   Widget build(BuildContext context) {
     // Define a small, centered scan area.
-    final double scanAreaWidth = 200;
-    final double scanAreaHeight = 100;
+    const double scanAreaWidth = 200;
+    const double scanAreaHeight = 100;
     final double leftOffset =
         (MediaQuery.of(context).size.width / 2) - (scanAreaWidth / 2);
     final double topOffset =

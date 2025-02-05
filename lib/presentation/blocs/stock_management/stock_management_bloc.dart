@@ -88,11 +88,11 @@ class StockManagementBloc
           category: '',
           traspaso: '',
           eanCode: '',
+          errorPercentage: 0.0,
         ),
       );
 
       if (matchingItem.itemName.isNotEmpty) {
-        // Emit new state to trigger the edit dialog
         emit(StockEditDialogState(matchingItem));
       } else {
         emit(StockError('No se encontró ningún producto con ese código.'));

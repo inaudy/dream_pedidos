@@ -1,4 +1,5 @@
 import 'package:dream_pedidos/data/models/stock_item.dart';
+import 'package:dream_pedidos/presentation/blocs/barcode_scanner_bloc/barcode_scanner_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/edit_stock_cubit.dart';
 import 'package:dream_pedidos/presentation/cubit/stock_search_cubit.dart';
@@ -19,112 +20,17 @@ class StockManagePage extends StatelessWidget {
         }
       },
       child: Scaffold(
-        // Floating button to launch the scanner.
-        /*floatingActionButton: FloatingActionButton(
-            onPressed: () async {
-              // Launch the scanner page.
-              final scannedCode = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const EAN13ScannerPage()),
-              );
-              if (scannedCode != null && scannedCode is String) {
-                // Search the loaded stock items from the StockManagementBloc state.
-                final currentState = context.read<StockManagementBloc>().state;
-                if (currentState is StockLoaded) {
-                  StockItem? matchingItem;
-                  try {
-                    matchingItem = currentState.stockItems.firstWhere(
-                      (item) =>
-                          item.eanCode != null &&
-                          item.eanCode!.trim() == scannedCode.trim(),
-                    );
-                  } catch (_) {
-                    matchingItem = null;
-                  }
-                  if (matchingItem != null) {
-                    // Open the edit dialog for the matching item.
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext dialogContext) {
-                        return BlocProvider<StockItemEditCubit>(
-                          create: (_) => StockItemEditCubit(matchingItem!),
-                          // Wrap AlertDialog in a Builder so its context is under the BlocProvider.
-                          child: Builder(
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text(matchingItem!.itemName),
-                                content: BlocBuilder<StockItemEditCubit,
-                                    StockItemEditState>(
-                                  builder: (context, state) {
-                                    return TextFormField(
-                                      initialValue: NumberFormat('#.#')
-                                          .format(state.actualStock),
-                                      decoration: const InputDecoration(
-                                        labelText: 'Actual Stock',
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      onChanged: (value) => context
-                                          .read<StockItemEditCubit>()
-                                          .actualStockChanged(value),
-                                    );
-                                  },
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(dialogContext).pop();
-                                    },
-                                    child: const Text('Salir'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      final updatedItem = StockItem(
-                                        itemName: matchingItem!.itemName,
-                                        minimumLevel: matchingItem.minimumLevel,
-                                        maximumLevel: matchingItem.maximumLevel,
-                                        actualStock: context
-                                            .read<StockItemEditCubit>()
-                                            .state
-                                            .actualStock,
-                                        category: matchingItem.category,
-                                        traspaso: matchingItem.traspaso,
-                                        eanCode: matchingItem.eanCode,
-                                      );
-                                      // Dispatch the update event to the StockManagementBloc.
-                                      context
-                                          .read<StockManagementBloc>()
-                                          .add(UpdateStockItemEvent(updatedItem));
-                                      Navigator.of(dialogContext).pop();
-                                    },
-                                    child: const Text('Guardar'),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    );
-                  }
-                  // If no matching item is found, do nothing.
-                }
-              }
-            },
-            child: const Icon(LucideIcons.scanBarcode, size: 24),
-          ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,*/
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Listen for StockLoaded updates after sync/upload.
-            BlocListener<StockManagementBloc, StockManagementState>(
-              listenWhen: (previous, current) {
-                // Only act when stockItems change.
-                return previous is! StockLoaded ||
-                    previous.stockItems != (current as StockLoaded).stockItems;
-              },
-              listener: (context, state) {
-                // (Optional) You can perform additional actions here when the stock updates.
+            BlocListener<BarcodeScannerBloc, BarcodeScannerState>(
+              listener: (context, scannerState) {
+                if (scannerState is BarcodeScannedState) {
+                  context
+                      .read<StockManagementBloc>()
+                      .add(SearchStockByEANEvent(scannerState.eanCode));
+                }
               },
               child: _buildSearchBar(context),
             ),
@@ -201,6 +107,7 @@ class StockManagePage extends StatelessWidget {
                         category: item.category,
                         traspaso: item.traspaso,
                         eanCode: item.eanCode,
+                        errorPercentage: item.errorPercentage,
                       );
 
                       // Dispatch the update event to the Bloc
@@ -375,6 +282,7 @@ class StockManagePage extends StatelessWidget {
                                   category: item.category,
                                   traspaso: item.traspaso,
                                   eanCode: item.eanCode,
+                                  errorPercentage: item.errorPercentage,
                                 );
                                 // Dispatch the update event to the global StockManagementBloc.
                                 globalContext

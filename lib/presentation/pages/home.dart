@@ -1,4 +1,5 @@
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
+import 'package:dream_pedidos/presentation/blocs/barcode_scanner_bloc/barcode_scanner_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/pages/ean13_scanner_page.dart';
 import 'package:dream_pedidos/presentation/pages/refill_history_page.dart';
@@ -75,23 +76,31 @@ class HomePage extends StatelessWidget {
                             .add(ToggleSearchEvent());
                       },
                     ),
-                    IconButton(
-                      icon: const Icon(LucideIcons.scanBarcode,
-                          color: Colors.white),
-                      onPressed: () async {
-                        final scannedCode = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const EAN13ScannerPage()),
-                        );
-
-                        if (scannedCode != null && scannedCode is String) {
-                          // Dispatch search event to StockManagementBloc
+                    BlocListener<BarcodeScannerBloc, BarcodeScannerState>(
+                      listener: (context, scannerState) {
+                        if (scannerState is BarcodeScannedState) {
                           context
                               .read<StockManagementBloc>()
-                              .add(SearchStockByEANEvent(scannedCode));
+                              .add(SearchStockByEANEvent(scannerState.eanCode));
                         }
                       },
+                      child: IconButton(
+                        icon: const Icon(LucideIcons.scanBarcode,
+                            color: Colors.white),
+                        onPressed: () async {
+                          final scannedCode = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const EAN13ScannerPage()),
+                          );
+
+                          if (scannedCode != null && scannedCode is String) {
+                            context
+                                .read<BarcodeScannerBloc>()
+                                .add(ScanBarcodeEvent(scannedCode));
+                          }
+                        },
+                      ),
                     ),
                   ],
                 );

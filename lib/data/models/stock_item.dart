@@ -6,6 +6,7 @@ class StockItem {
   final String category;
   final String? traspaso;
   final String? eanCode;
+  final double errorPercentage;
 
   StockItem({
     required this.itemName,
@@ -15,6 +16,7 @@ class StockItem {
     required this.category,
     this.traspaso,
     this.eanCode,
+    required this.errorPercentage,
   });
 
   // Method to create a copy of this StockItem with updated values
@@ -26,6 +28,7 @@ class StockItem {
     String? category,
     String? traspaso,
     String? eanCode,
+    double? errorPercentage,
   }) {
     return StockItem(
       itemName: itemName ?? this.itemName,
@@ -35,6 +38,7 @@ class StockItem {
       category: category ?? this.category,
       traspaso: traspaso ?? this.traspaso,
       eanCode: eanCode ?? this.eanCode,
+      errorPercentage: errorPercentage ?? this.errorPercentage,
     );
   }
 
@@ -48,6 +52,7 @@ class StockItem {
       'category': category,
       'traspaso': traspaso,
       'ean_code': eanCode,
+      'error_percentage': errorPercentage,
     };
   }
 
@@ -61,6 +66,8 @@ class StockItem {
       category: map['category'],
       traspaso: map['traspaso'],
       eanCode: map['ean_code'],
+      errorPercentage:
+          (map['error_percentage'] as num?)?.toDouble() ?? 0.0, // Default 0.0%
     );
   }
 
