@@ -1,7 +1,7 @@
+import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
-import 'package:dream_pedidos/presentation/blocs/barcode_scanner_bloc/barcode_scanner_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
-import 'package:dream_pedidos/presentation/pages/ean13_scanner_page.dart';
+import 'package:dream_pedidos/presentation/cubit/edit_stock_cubit.dart';
 import 'package:dream_pedidos/presentation/pages/refill_history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +11,7 @@ import 'package:dream_pedidos/presentation/pages/refill_report_screen.dart';
 import 'package:dream_pedidos/presentation/pages/stock_screen.dart';
 import 'package:dream_pedidos/presentation/pages/upload_sales_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:dream_pedidos/presentation/pages/ean13_scanner_page.dart';
 
 class HomePage extends StatelessWidget {
   final StockRepository stockRepository;
@@ -64,7 +65,7 @@ class HomePage extends StatelessWidget {
           BlocBuilder<BottomNavcubit, int>(
             builder: (context, state) {
               if (state == 1) {
-                // Show search icon only on StockManagePage
+                // Show search and barcode icons only on StockManagePage
                 return Row(
                   children: [
                     IconButton(
@@ -76,31 +77,49 @@ class HomePage extends StatelessWidget {
                             .add(ToggleSearchEvent());
                       },
                     ),
-                    BlocListener<BarcodeScannerBloc, BarcodeScannerState>(
-                      listener: (context, scannerState) {
-                        if (scannerState is BarcodeScannedState) {
-                          context
-                              .read<StockManagementBloc>()
-                              .add(SearchStockByEANEvent(scannerState.eanCode));
+                    IconButton(
+                      icon: const Icon(LucideIcons.scanBarcode,
+                          color: Colors.white),
+                      onPressed: () async {
+                        // Launch the scanner page
+                        final scannedCode = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const EAN13ScannerPage()),
+                        );
+                        if (scannedCode != null && scannedCode is String) {
+                          // Access the current stock state (which remains unchanged)
+                          final currentState =
+                              context.read<StockManagementBloc>().state;
+                          if (currentState is StockLoaded) {
+                            final matchingItem =
+                                currentState.stockItems.firstWhere(
+                              (item) =>
+                                  item.eanCode?.trim() == scannedCode.trim(),
+                              orElse: () => StockItem(
+                                itemName: '',
+                                minimumLevel: 0,
+                                maximumLevel: 0,
+                                actualStock: 0,
+                                category: '',
+                                traspaso: '',
+                                eanCode: '',
+                                errorPercentage: 0,
+                              ),
+                            );
+                            if (matchingItem != null) {
+                              // Open the edit dialog for the matching item
+                              _showStockEditDialog(context, matchingItem);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        "No se encontró producto con ese código.")),
+                              );
+                            }
+                          }
                         }
                       },
-                      child: IconButton(
-                        icon: const Icon(LucideIcons.scanBarcode,
-                            color: Colors.white),
-                        onPressed: () async {
-                          final scannedCode = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const EAN13ScannerPage()),
-                          );
-
-                          if (scannedCode != null && scannedCode is String) {
-                            context
-                                .read<BarcodeScannerBloc>()
-                                .add(ScanBarcodeEvent(scannedCode));
-                          }
-                        },
-                      ),
                     ),
                   ],
                 );
@@ -185,9 +204,7 @@ class HomePage extends StatelessWidget {
   Widget _buildDrawerItem(BuildContext context,
       {required IconData icon, required String title, required int pageIndex}) {
     return ListTile(
-      leading: Icon(
-        icon,
-      ),
+      leading: Icon(icon),
       title: Text(
         title,
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -204,5 +221,68 @@ class HomePage extends StatelessWidget {
   void _navigateToPage(BuildContext context, int pageIndex) {
     context.read<BottomNavcubit>().updateIndex(pageIndex);
     Navigator.of(context).pop(); // Close the drawer
+  }
+
+  /// This dialog is used to edit a specific stock item.
+  void _showStockEditDialog(BuildContext context, StockItem item) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return BlocProvider(
+          create: (_) => StockItemEditCubit(item),
+          child: Builder(
+            builder: (context) {
+              return AlertDialog(
+                title: Text(item.itemName),
+                content: BlocBuilder<StockItemEditCubit, StockItemEditState>(
+                  builder: (context, state) {
+                    return TextFormField(
+                      initialValue: state.actualStock.toString(),
+                      decoration:
+                          const InputDecoration(labelText: 'Stock Actual'),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        context
+                            .read<StockItemEditCubit>()
+                            .actualStockChanged(value);
+                      },
+                    );
+                  },
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Cancelar'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final updatedItem = StockItem(
+                        itemName: item.itemName,
+                        minimumLevel: item.minimumLevel,
+                        maximumLevel: item.maximumLevel,
+                        actualStock: context
+                            .read<StockItemEditCubit>()
+                            .state
+                            .actualStock,
+                        category: item.category,
+                        traspaso: item.traspaso,
+                        eanCode: item.eanCode,
+                        errorPercentage: item.errorPercentage,
+                      );
+                      // Dispatch the update event to StockManagementBloc.
+                      context
+                          .read<StockManagementBloc>()
+                          .add(UpdateStockItemEvent(updatedItem));
+                      Navigator.pop(dialogContext);
+                    },
+                    child: const Text('Guardar'),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 }

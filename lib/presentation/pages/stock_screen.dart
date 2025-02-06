@@ -1,5 +1,4 @@
 import 'package:dream_pedidos/data/models/stock_item.dart';
-import 'package:dream_pedidos/presentation/blocs/barcode_scanner_bloc/barcode_scanner_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/edit_stock_cubit.dart';
 import 'package:dream_pedidos/presentation/cubit/stock_search_cubit.dart';
@@ -24,16 +23,7 @@ class StockManagePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Listen for StockLoaded updates after sync/upload.
-            BlocListener<BarcodeScannerBloc, BarcodeScannerState>(
-              listener: (context, scannerState) {
-                if (scannerState is BarcodeScannedState) {
-                  context
-                      .read<StockManagementBloc>()
-                      .add(SearchStockByEANEvent(scannerState.eanCode));
-                }
-              },
-              child: _buildSearchBar(context),
-            ),
+            _buildSearchBar(context),
             // Stock List (Filtered & Categorized)
             Expanded(
               child: BlocBuilder<StockManagementBloc, StockManagementState>(
