@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:equatable/equatable.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'stock_management_event.dart';
 part 'stock_management_state.dart';
@@ -9,15 +10,14 @@ part 'stock_management_state.dart';
 class StockManagementBloc
     extends Bloc<StockManagementEvent, StockManagementState> {
   final StockRepository stockRepository;
+  final String posKey; // e.g., "restaurant", "bar", or "beachClub"
 
-  StockManagementBloc(this.stockRepository)
+  StockManagementBloc(this.stockRepository, {required this.posKey})
       : super(const StockManagementInitial()) {
     on<LoadStockEvent>(_onLoadStock);
     on<UpdateStockItemEvent>(_onUpdateStockItem);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
     on<ToggleSearchEvent>(_onToggleSearchEvent);
-    on<SearchStockByEANEvent>(_onSearchStockByEAN);
-    on<UpdateSearchQueryEvent>(_onUpdateSearchQuery);
   }
 
   /// 🔹 Load Stock Items
@@ -122,6 +122,9 @@ class StockManagementBloc
     emit(const StockLoading());
     try {
       await stockRepository.resetStockFromBackup();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('last_sync_date_$posKey');
+
       final updatedStock = await stockRepository.getAllStockItems();
 
       final currentState = state as StockLoaded;

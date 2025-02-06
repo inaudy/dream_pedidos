@@ -2,6 +2,8 @@ import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/edit_stock_cubit.dart';
+import 'package:dream_pedidos/presentation/cubit/pos_cubit.dart';
+import 'package:dream_pedidos/presentation/pages/ean13_scanner_page.dart';
 import 'package:dream_pedidos/presentation/pages/refill_history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,7 +13,6 @@ import 'package:dream_pedidos/presentation/pages/refill_report_screen.dart';
 import 'package:dream_pedidos/presentation/pages/stock_screen.dart';
 import 'package:dream_pedidos/presentation/pages/upload_sales_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:dream_pedidos/presentation/pages/ean13_scanner_page.dart';
 
 class HomePage extends StatelessWidget {
   final StockRepository stockRepository;
@@ -40,8 +41,9 @@ class HomePage extends StatelessWidget {
             );
           },
         ),
+        // Combine the page title and the selected POS in a Column.
         title: BlocBuilder<BottomNavcubit, int>(
-          builder: (context, state) {
+          builder: (context, navState) {
             final List<String> appBarsTitle = [
               'VENTAS',
               'ALMACEN',
@@ -49,12 +51,30 @@ class HomePage extends StatelessWidget {
               'HISTORIAL DE REPOSICION',
               'CONFIGURACION',
             ];
-            return Text(
-              appBarsTitle[state],
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: Colors.white),
+            return BlocBuilder<PosSelectionCubit, PosType>(
+              builder: (context, posState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appBarsTitle[navState],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      "POS: ${posState.name}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                );
+              },
             );
           },
         ),
@@ -63,8 +83,8 @@ class HomePage extends StatelessWidget {
         elevation: 2.0,
         actions: [
           BlocBuilder<BottomNavcubit, int>(
-            builder: (context, state) {
-              if (state == 1) {
+            builder: (context, navState) {
+              if (navState == 1) {
                 // Show search and barcode icons only on StockManagePage
                 return Row(
                   children: [
@@ -85,7 +105,8 @@ class HomePage extends StatelessWidget {
                         final scannedCode = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const EAN13ScannerPage()),
+                            builder: (context) => const EAN13ScannerPage(),
+                          ),
                         );
                         if (scannedCode != null && scannedCode is String) {
                           // Access the current stock state (which remains unchanged)
@@ -107,14 +128,15 @@ class HomePage extends StatelessWidget {
                                 errorPercentage: 0,
                               ),
                             );
-                            if (matchingItem != null) {
+                            if (matchingItem.itemName.isNotEmpty) {
                               // Open the edit dialog for the matching item
                               _showStockEditDialog(context, matchingItem);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                    content: Text(
-                                        "No se encontró producto con ese código.")),
+                                  content: Text(
+                                      "No se encontró producto con ese código."),
+                                ),
                               );
                             }
                           }
@@ -141,12 +163,32 @@ class HomePage extends StatelessWidget {
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildDrawerHeader(),
+          // Other drawer items
           Expanded(
             child: ListView(
               padding: const EdgeInsets.only(left: 16),
               children: [
+                BlocBuilder<PosSelectionCubit, PosType>(
+                  builder: (context, currentPos) {
+                    return ExpansionTile(
+                      title: const Text(
+                        'Punto de Venta',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        currentPos.name,
+                        style: const TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold),
+                      ),
+                      children: _buildPosList(context),
+                    );
+                  },
+                ),
+                const Divider(),
                 _buildDrawerItem(
                   context,
                   icon: Icons.sync,
@@ -185,16 +227,63 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  /// Build the list of available POS options.
+  List<Widget> _buildPosList(BuildContext context) {
+    final posOptions = [
+      {
+        "title": "Restaurante",
+        "pos": PosType.restaurant,
+        "icon": Icons.restaurant,
+      },
+      {
+        "title": "Beach Club",
+        "pos": PosType.beachClub,
+        "icon": Icons.beach_access,
+      },
+      {
+        "title": "Bar Hall",
+        "pos": PosType.bar,
+        "icon": Icons.local_bar,
+      },
+    ];
+
+    return posOptions.map((option) {
+      return ListTile(
+        leading: Icon(option["icon"] as IconData),
+        title: Text(option["title"] as String),
+        onTap: () {
+          // Update the selected POS.
+          context.read<PosSelectionCubit>().selectPos(option["pos"] as PosType);
+          // Optionally, if you need to reinitialize POS-dependent blocs/repositories,
+          // you can trigger a navigation pushReplacement here.
+          Navigator.of(context).pop(); // Close the drawer.
+        },
+      );
+    }).toList();
+  }
+
+  /// Drawer header (for example, including the logo)
   Widget _buildDrawerHeader() {
     return DrawerHeader(
       decoration: const BoxDecoration(
         color: Color(0xFFBA0C2F),
       ),
-      child: Row(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Image.asset(
             'assets/images/logo.png',
+            height: 60,
+          ),
+          const SizedBox(height: 8),
+          // Optionally, show the current POS here as well:
+          BlocBuilder<PosSelectionCubit, PosType>(
+            builder: (context, pos) {
+              return Text(
+                "POS: ${pos.name}",
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              );
+            },
           ),
         ],
       ),

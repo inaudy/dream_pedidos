@@ -10,11 +10,16 @@ import 'package:intl/intl.dart'; // For date formatting
 part 'stock_sync_event.dart';
 part 'stock_sync_state.dart';
 
+/// Modify the bloc to also receive a posKey that distinguishes the current POS.
+/// (For example, 'restaurant', 'beachClub', or 'bar'.)
 class StockSyncBloc extends Bloc<StockSyncEvent, StockSyncState> {
   final StockRepository stockRepository;
   final StockManagementBloc _stockManagementBloc;
+  final String
+      posKey; // This will be used to create a unique SharedPreferences key
 
-  StockSyncBloc(this.stockRepository, this._stockManagementBloc)
+  StockSyncBloc(this.stockRepository, this._stockManagementBloc,
+      {required this.posKey})
       : super(StockSyncInitial()) {
     on<SyncStockEvent>(_onSyncStock);
   }
@@ -27,7 +32,7 @@ class StockSyncBloc extends Bloc<StockSyncEvent, StockSyncState> {
       // Get sales date from first sales entry
       final DateTime salesDate = event.salesData.first.date;
 
-      // Check if this sales date was already synced
+      // Check if this sales date was already synced for this POS
       final bool alreadySynced = await _isAlreadySynced(salesDate);
       if (alreadySynced) {
         emit(StockSyncError(
@@ -43,7 +48,7 @@ class StockSyncBloc extends Bloc<StockSyncEvent, StockSyncState> {
       // Perform stock update
       await stockRepository.bulkUpdateStock(updatedSalesData);
 
-      // Save last sync date
+      // Save last sync date (specific to this POS)
       await _saveLastSyncDate(salesDate);
 
       emit(StockSyncSuccess());
@@ -53,16 +58,18 @@ class StockSyncBloc extends Bloc<StockSyncEvent, StockSyncState> {
     }
   }
 
-  /// Saves the last sync date in SharedPreferences
+  /// Saves the last sync date in SharedPreferences using a key specific to the POS.
   Future<void> _saveLastSyncDate(DateTime salesDate) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('last_sync_date', salesDate.toIso8601String());
+    // Example key: "last_sync_date_restaurant"
+    await prefs.setString(
+        'last_sync_date_$posKey', salesDate.toIso8601String());
   }
 
-  /// Checks if the sales data for the given date is already synced
+  /// Checks if the sales data for the given date is already synced for this POS.
   Future<bool> _isAlreadySynced(DateTime salesDate) async {
     final prefs = await SharedPreferences.getInstance();
-    final lastSyncString = prefs.getString('last_sync_date');
+    final lastSyncString = prefs.getString('last_sync_date_$posKey');
 
     if (lastSyncString == null) return false; // No sync yet
 

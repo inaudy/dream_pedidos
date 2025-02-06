@@ -2,17 +2,16 @@
 
 import 'package:dream_pedidos/data/models/refill_history_item.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
+import 'package:dream_pedidos/presentation/cubit/pos_cubit.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../../models/stock_item.dart';
 
 class StockDatabase implements StockRepository {
-  static final StockDatabase _instance = StockDatabase._internal();
-  factory StockDatabase() => _instance;
+  final String dbName;
+  Database? _database;
 
-  StockDatabase._internal();
-
-  static Database? _database;
+  StockDatabase({required this.dbName});
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -22,7 +21,7 @@ class StockDatabase implements StockRepository {
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'stock_manager.db');
+    final path = join(dbPath, dbName);
 
     return await openDatabase(
       path,
@@ -46,27 +45,14 @@ class StockDatabase implements StockRepository {
           )
           ''',
           '''
-          CREATE TABLE stock_backup (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            item_name TEXT NOT NULL UNIQUE,
-            actual_stock REAL NOT NULL,
-            minimum_level REAL NOT NULL,
-            maximum_level REAL NOT NULL,
-            category TEXT NOT NULL,
-            traspaso TEXT,
-            ean_code TEXT,
-            error_percentage INTEGER DEFAULT 0 
-          )
-          ''',
-          '''
-           CREATE TABLE refill_history (
+          CREATE TABLE refill_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             item_name TEXT NOT NULL,
             refill_quantity REAL NOT NULL,
             refill_date TEXT NOT NULL,
             FOREIGN KEY (item_name) REFERENCES stock(item_name) ON DELETE CASCADE
-  )
-'''
+          )
+          '''
         ];
 
         for (var query in tableDefinitions) {
@@ -226,5 +212,16 @@ class StockDatabase implements StockRepository {
       where: 'item_name = ?',
       whereArgs: [item.itemName], // Ensure correct WHERE clause
     );
+  }
+
+  StockDatabase createDatabaseForPos(PosType pos) {
+    switch (pos) {
+      case PosType.restaurant:
+        return StockDatabase(dbName: 'restaurant.db');
+      case PosType.beachClub:
+        return StockDatabase(dbName: 'beach_club.db');
+      case PosType.bar:
+        return StockDatabase(dbName: 'bar_hall.db');
+    }
   }
 }
