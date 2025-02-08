@@ -47,8 +47,6 @@ class StockEditDialogState extends StockManagementState {
   List<Object?> get props => [stockItem];
 }
 
-/// 🔹 **New State for Barcode Scanning Result**
-
 /// 🔹 Error State
 class StockError extends StockManagementState {
   final String message;

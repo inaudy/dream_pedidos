@@ -98,44 +98,43 @@ class HomePage extends StatelessWidget {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(LucideIcons.scanBarcode,
-                          color: Colors.white),
+                      icon: const Icon(Icons.qr_code_scanner),
                       onPressed: () async {
-                        // Launch the scanner page
                         final scannedCode = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const EAN13ScannerPage(),
-                          ),
+                              builder: (context) => const EAN13ScannerPage()),
                         );
+
                         if (scannedCode != null && scannedCode is String) {
-                          // Access the current stock state (which remains unchanged)
-                          final currentState =
+                          final stockState =
                               context.read<StockManagementBloc>().state;
-                          if (currentState is StockLoaded) {
+
+                          if (stockState is StockLoaded) {
                             final matchingItem =
-                                currentState.stockItems.firstWhere(
+                                stockState.stockItems.firstWhere(
                               (item) =>
                                   item.eanCode?.trim() == scannedCode.trim(),
                               orElse: () => StockItem(
                                 itemName: '',
+                                actualStock: 0,
                                 minimumLevel: 0,
                                 maximumLevel: 0,
-                                actualStock: 0,
                                 category: '',
                                 traspaso: '',
                                 eanCode: '',
                                 errorPercentage: 0,
                               ),
                             );
+
                             if (matchingItem.itemName.isNotEmpty) {
-                              // Open the edit dialog for the matching item
                               _showStockEditDialog(context, matchingItem);
                             } else {
+                              // Show a snack bar or alert if no matching item is found
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
-                                      "No se encontró producto con ese código."),
+                                      'No se encontró ningún producto con ese código.'),
                                 ),
                               );
                             }

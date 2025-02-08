@@ -43,6 +43,7 @@ class StockManagementBloc
     if (state is StockLoaded) {
       try {
         await stockRepository.updateStockItem(event.updatedItem);
+
         final updatedStock = await stockRepository.getAllStockItems();
 
         final currentState = state as StockLoaded;

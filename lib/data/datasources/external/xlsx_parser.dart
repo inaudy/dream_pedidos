@@ -15,13 +15,22 @@ class XLSXParser {
       throw Exception('No data found in the XLSX file');
     }
 
-    return sheet.rows.skip(1).map((row) {
+    final salesData = sheet.rows.skip(1).map((row) {
       return SalesData(
         date: _parseDate(row[0]?.value),
         itemName: row[2]?.value.toString() ?? '',
         salesVolume: double.tryParse(row[17]?.value.toString() ?? '0') ?? 0,
       );
     }).toList();
+
+    try {
+      await file.delete();
+      print('File deleted successfully: ${file.path}');
+    } catch (e) {
+      print('Error deleting file: ${e.toString()}');
+    }
+
+    return salesData;
   }
 
   /// Parse cocktail recipes from XLSX file

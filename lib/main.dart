@@ -1,4 +1,3 @@
-import 'package:dream_pedidos/data/repositories/recipe_repository.dart';
 import 'package:dream_pedidos/presentation/blocs/recipe_parser_bloc/recipe_parser_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/refill_history_bloc/refill_history_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/sales_parser_bloc/sales_parser_bloc.dart';
@@ -23,6 +22,18 @@ StockDatabase createDatabaseForPos(PosType pos) {
       return StockDatabase(dbName: 'beach_club.db');
     case PosType.bar:
       return StockDatabase(dbName: 'bar.db');
+  }
+}
+
+RecipeDatabase createRecipeDatabaseForPos(PosType pos) {
+  switch (pos) {
+    case PosType.restaurant:
+      return RecipeDatabase(
+          dbName: 'restaurant_recipes.db'); // note the "_recipes"
+    case PosType.beachClub:
+      return RecipeDatabase(dbName: 'beach_club_recipes.db');
+    case PosType.bar:
+      return RecipeDatabase(dbName: 'bar_recipes.db');
   }
 }
 
@@ -51,7 +62,6 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  final CocktailRecipeRepository cocktailRecipeRepository = RecipeDatabase();
   @override
   Widget build(BuildContext context) {
     // Use BlocBuilder to listen to changes in the selected POS.
@@ -59,6 +69,7 @@ class MyApp extends StatelessWidget {
       builder: (context, pos) {
         // Create a new repository based on the currently selected POS.
         final repository = createDatabaseForPos(pos);
+        final recipeDatabase = createRecipeDatabaseForPos(pos);
         // Use a ValueKey with the POS so that when pos changes,
         // the subtree (and its blocs) are rebuilt.
         return MultiBlocProvider(
@@ -83,6 +94,7 @@ class MyApp extends StatelessWidget {
             BlocProvider<StockSyncBloc>(
               create: (context) {
                 return StockSyncBloc(
+                    recipeRepository: recipeDatabase,
                     posKey: pos.name,
                     repository,
                     context.read<StockManagementBloc>());
@@ -99,7 +111,8 @@ class MyApp extends StatelessWidget {
             // For example, if your RecipeParserBloc is also POS-dependent,
             // you could similarly reinitialize it here with a repository.
             BlocProvider<RecipeParserBloc>(
-              create: (context) => RecipeParserBloc(RecipeDatabase()),
+              create: (context) => RecipeParserBloc(
+                  RecipeDatabase(dbName: recipeDatabase.dbName)),
             ),
             BlocProvider<SalesParserBloc>(
               create: (context) => SalesParserBloc(),

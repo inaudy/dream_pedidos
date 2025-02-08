@@ -1,8 +1,6 @@
 // Move this file to: lib/data/sources/local/stock_database.dart
-
 import 'package:dream_pedidos/data/models/refill_history_item.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
-import 'package:dream_pedidos/presentation/cubit/pos_cubit.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../../models/stock_item.dart';
@@ -212,16 +210,5 @@ class StockDatabase implements StockRepository {
       where: 'item_name = ?',
       whereArgs: [item.itemName], // Ensure correct WHERE clause
     );
-  }
-
-  StockDatabase createDatabaseForPos(PosType pos) {
-    switch (pos) {
-      case PosType.restaurant:
-        return StockDatabase(dbName: 'restaurant.db');
-      case PosType.beachClub:
-        return StockDatabase(dbName: 'beach_club.db');
-      case PosType.bar:
-        return StockDatabase(dbName: 'bar_hall.db');
-    }
   }
 }

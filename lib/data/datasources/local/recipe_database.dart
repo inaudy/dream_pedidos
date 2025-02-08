@@ -4,11 +4,10 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class RecipeDatabase implements CocktailRecipeRepository {
-  static final RecipeDatabase _instance = RecipeDatabase._internal();
-  factory RecipeDatabase() => _instance;
-  RecipeDatabase._internal();
+  final String dbName;
+  Database? _database;
 
-  static Database? _database;
+  RecipeDatabase({required this.dbName});
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -18,8 +17,7 @@ class RecipeDatabase implements CocktailRecipeRepository {
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'cocktail_manager.db');
-
+    final path = join(dbPath, dbName);
     return await openDatabase(
       path,
       version: 1,
