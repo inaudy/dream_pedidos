@@ -32,7 +32,7 @@ class ConfigPage extends StatelessWidget {
               icon: Icons.upload_file,
               label: 'Cargar Stocks',
               textColor: Colors.black, // Darker text for neutral actions
-              onPressed: () => _uploadFile(fileStockBloc, messenger),
+              onPressed: () => _uploadFile(stockBloc, fileStockBloc, messenger),
             ),
             const SizedBox(height: 6),
             _buildConfigButton(
@@ -66,7 +66,8 @@ class ConfigPage extends StatelessWidget {
     );
   }
 
-  Future<void> _uploadFile(
+  //load stocks
+  Future<void> _uploadFile(StockManagementBloc stockBloc,
       FileStockBloc fileStockBloc, ScaffoldMessengerState messenger) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -76,6 +77,7 @@ class ConfigPage extends StatelessWidget {
     if (result != null && result.files.single.path != null) {
       final filePath = result.files.single.path!;
       fileStockBloc.add(FileStockUploadEvent(filePath));
+      stockBloc.add(LoadStockEvent());
     } else {
       messenger.showSnackBar(
         const SnackBar(content: Text('No file selected')),

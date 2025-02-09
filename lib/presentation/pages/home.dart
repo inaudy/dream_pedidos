@@ -4,6 +4,7 @@ import 'package:dream_pedidos/presentation/blocs/stock_management/stock_manageme
 import 'package:dream_pedidos/presentation/cubit/edit_stock_cubit.dart';
 import 'package:dream_pedidos/presentation/cubit/pos_cubit.dart';
 import 'package:dream_pedidos/presentation/pages/ean13_scanner_page.dart';
+import 'package:dream_pedidos/presentation/pages/pos_selection_page.dart';
 import 'package:dream_pedidos/presentation/pages/refill_history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -165,29 +166,40 @@ class HomePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildDrawerHeader(),
-          // Other drawer items
           Expanded(
             child: ListView(
               padding: const EdgeInsets.only(left: 16),
               children: [
-                BlocBuilder<PosSelectionCubit, PosType>(
+                // Display only the current POS
+                /*BlocBuilder<PosSelectionCubit, PosType>(
                   builder: (context, currentPos) {
-                    return ExpansionTile(
-                      title: const Text(
-                        'Punto de Venta',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        currentPos.name,
+                    return ListTile(
+                      leading:
+                          const Icon(Icons.storefront, color: Colors.black),
+                      title: Text(
+                        "${currentPos.name}",
                         style: const TextStyle(
-                            fontSize: 25, fontWeight: FontWeight.bold),
+                            fontSize: 24, fontWeight: FontWeight.bold),
                       ),
-                      children: _buildPosList(context),
                     );
                   },
+                ),*/
+                // Button to Change POS
+                ListTile(
+                  leading: const Icon(Icons.swap_horiz, color: Colors.blue),
+                  title: const Text(
+                    'Cambiar Almacen',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  onTap: () {
+                    Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (_) => PosSelectionPage()));
+                  },
                 ),
+
                 const Divider(),
+
+                // Drawer navigation items
                 _buildDrawerItem(
                   context,
                   icon: Icons.sync,
@@ -197,7 +209,7 @@ class HomePage extends StatelessWidget {
                 _buildDrawerItem(
                   context,
                   icon: Icons.store,
-                  title: 'Almacen',
+                  title: 'Almacén',
                   pageIndex: 1,
                 ),
                 _buildDrawerItem(
@@ -208,7 +220,7 @@ class HomePage extends StatelessWidget {
                 ),
                 _buildDrawerItem(
                   context,
-                  icon: Icons.list,
+                  icon: Icons.history,
                   title: 'Historial de Reposición',
                   pageIndex: 3,
                 ),
@@ -289,7 +301,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItem(BuildContext context,
+  /* Widget _buildDrawerItem(BuildContext context,
       {required IconData icon, required String title, required int pageIndex}) {
     return ListTile(
       leading: Icon(icon),
@@ -299,6 +311,26 @@ class HomePage extends StatelessWidget {
       ),
       onTap: () {
         _navigateToPage(context, pageIndex);
+      },
+      horizontalTitleGap: 10,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      dense: true,
+    );
+  }*/
+
+  Widget _buildDrawerItem(BuildContext context,
+      {required IconData icon, required String title, required int pageIndex}) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+      onTap: () {
+        if (title == "Cambiar Almacen") {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => PosSelectionPage()));
+        } else {
+          _navigateToPage(context, pageIndex);
+        }
       },
       horizontalTitleGap: 10,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),

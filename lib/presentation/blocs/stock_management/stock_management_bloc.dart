@@ -37,21 +37,19 @@ class StockManagementBloc
     }
   }
 
-  /// 🔹 Update Stock Item
   Future<void> _onUpdateStockItem(
       UpdateStockItemEvent event, Emitter<StockManagementState> emit) async {
     if (state is StockLoaded) {
       try {
         await stockRepository.updateStockItem(event.updatedItem);
-
         final updatedStock = await stockRepository.getAllStockItems();
 
-        final currentState = state as StockLoaded;
+        emit(const StockLoading()); // 🔹 Ensures UI refresh
         emit(StockLoaded(
           updatedStock,
           message: 'Stock updated successfully.',
-          isSearchVisible: currentState.isSearchVisible, // Preserve UI state
-          searchQuery: currentState.searchQuery, // Preserve search state
+          isSearchVisible: (state as StockLoaded).isSearchVisible,
+          searchQuery: (state as StockLoaded).searchQuery,
         ));
       } catch (e) {
         emit(StockError('Error updating stock: ${e.toString()}'));
@@ -73,54 +71,9 @@ class StockManagementBloc
     }
   }
 
-  /// 🔹 Search Stock By Barcode (EAN-13)
-  void _onSearchStockByEAN(
-      SearchStockByEANEvent event, Emitter<StockManagementState> emit) {
-    if (state is StockLoaded) {
-      final currentState = state as StockLoaded;
-      final stockItems = currentState.stockItems;
-
-      final matchingItem = stockItems.firstWhere(
-        (item) => item.eanCode?.trim() == event.eanCode.trim(),
-        orElse: () => StockItem(
-          itemName: '',
-          minimumLevel: 0,
-          maximumLevel: 0,
-          actualStock: 0,
-          category: '',
-          traspaso: '',
-          eanCode: '',
-          errorPercentage: 0,
-        ),
-      );
-
-      if (matchingItem.itemName.isNotEmpty) {
-        emit(StockEditDialogState(matchingItem));
-      } else {
-        emit(
-            const StockError('No se encontró ningún producto con ese código.'));
-      }
-    }
-  }
-
-  /// 🔹 Update Search Query (User Typing)
-  void _onUpdateSearchQuery(
-      UpdateSearchQueryEvent event, Emitter<StockManagementState> emit) {
-    if (state is StockLoaded) {
-      final currentState = state as StockLoaded;
-      emit(StockLoaded(
-        currentState.stockItems,
-        message: currentState.message,
-        isSearchVisible: currentState.isSearchVisible,
-        searchQuery: event.searchQuery, // Update the search query
-      ));
-    }
-  }
-
-  /// 🔹 Delete All Stock Items
   Future<void> _onDeleteAllStock(
       DeleteAllStockEvent event, Emitter<StockManagementState> emit) async {
-    emit(const StockLoading());
+    emit(const StockLoading()); // 🔹 Ensures UI refresh
     try {
       await stockRepository.resetStockFromBackup();
       final prefs = await SharedPreferences.getInstance();
@@ -128,12 +81,11 @@ class StockManagementBloc
 
       final updatedStock = await stockRepository.getAllStockItems();
 
-      final currentState = state as StockLoaded;
       emit(StockLoaded(
         updatedStock,
         message: 'Stock reset successfully.',
-        isSearchVisible: currentState.isSearchVisible, // Preserve state
-        searchQuery: currentState.searchQuery, // Preserve search state
+        isSearchVisible: false,
+        searchQuery: '',
       ));
     } catch (error) {
       emit(StockError('Error resetting stock: ${error.toString()}'));

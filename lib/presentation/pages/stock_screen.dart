@@ -11,73 +11,48 @@ class StockManagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<StockManagementBloc, StockManagementState>(
+    return BlocConsumer<StockManagementBloc, StockManagementState>(
       listener: (context, state) {
         if (state is StockEditDialogState) {
           _showStockEditDialog(context, state.stockItem);
-        }
-        if (state is StockLoaded) {
-          // Reload the stock list after an update
-          context.read<StockManagementBloc>().add(LoadStockEvent());
+        } else if (state is StockLoaded) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Stock actualizado correctamente")),
+          );
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: BlocBuilder<StockManagementBloc, StockManagementState>(
-            builder: (context, state) {
-              return const Text(
-                'Gestión de Inventario',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              );
-            },
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                context.read<StockManagementBloc>().add(ToggleSearchEvent());
-              },
+      builder: (context, state) {
+        if (state is StockLoading) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (state is StockLoaded) {
+          final filteredStock = _applySearchFilter(
+            state.stockItems,
+            context.watch<StockSearchCubit>().state,
+          );
+          return Scaffold(
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildSearchBar(context, state.isSearchVisible),
+                Expanded(child: _buildCategorizedList(context, filteredStock)),
+              ],
             ),
-          ],
-        ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSearchBar(context),
-            Expanded(
-              child: BlocBuilder<StockManagementBloc, StockManagementState>(
-                builder: (context, state) {
-                  if (state is StockLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (state is StockLoaded) {
-                    final filteredStock = _applySearchFilter(
-                      state.stockItems,
-                      context.watch<StockSearchCubit>().state,
-                    );
-                    return _buildCategorizedList(context, filteredStock);
-                  } else if (state is StockError) {
-                    return Center(
-                      child: Text(
-                        'Error: ${state.message}',
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    );
-                  }
-                  return const Center(child: Text('No hay datos disponibles.'));
-                },
-              ),
+          );
+        } else if (state is StockError) {
+          return Center(
+            child: Text(
+              'Error: ${state.message}',
+              style: const TextStyle(color: Colors.red),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+        return const Center(child: Text('No hay datos disponibles.'));
+      },
     );
   }
 
   void _showStockEditDialog(BuildContext context, StockItem item) {
-    if (item.itemName.isEmpty) {
-      // If item data is invalid, do nothing
-      return;
-    }
+    if (item.itemName.isEmpty) return;
 
     showDialog(
       context: context,
@@ -118,11 +93,9 @@ class StockManagePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
-    return BlocBuilder<StockManagementBloc, StockManagementState>(
-      builder: (context, state) {
-        if (state is StockLoaded && state.isSearchVisible) {
-          return Padding(
+  Widget _buildSearchBar(BuildContext context, bool isSearchVisible) {
+    return isSearchVisible
+        ? Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               onChanged: (query) =>
@@ -135,11 +108,8 @@ class StockManagePage extends StatelessWidget {
                 ),
               ),
             ),
-          );
-        }
-        return const SizedBox.shrink();
-      },
-    );
+          )
+        : const SizedBox.shrink();
   }
 
   List<StockItem> _applySearchFilter(List<StockItem> stockItems, String query) {
@@ -200,7 +170,7 @@ class StockManagePage extends StatelessWidget {
             backgroundColor: Colors.blue,
             foregroundColor: Colors.white,
             icon: Icons.edit,
-            label: 'Edit',
+            label: 'Editar',
           ),
         ],
       ),

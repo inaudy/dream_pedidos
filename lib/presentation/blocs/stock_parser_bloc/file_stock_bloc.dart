@@ -18,7 +18,7 @@ class FileStockBloc extends Bloc<FileStockEvent, FileStockState> {
         final stockDataList = await FileParser.parseStockFile(event.filePath);
 
         await _stockRepository.addStockItems(stockDataList);
-        _stockManagementBloc.add(LoadStockEvent());
+
         emit(FileStockUploadSuccess(stockDataList));
         _stockManagementBloc.add(LoadStockEvent());
       } catch (e) {
