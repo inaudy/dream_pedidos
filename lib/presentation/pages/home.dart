@@ -99,7 +99,10 @@ class HomePage extends StatelessWidget {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.qr_code_scanner),
+                      icon: const Icon(
+                        LucideIcons.scanBarcode,
+                        color: Colors.white,
+                      ),
                       onPressed: () async {
                         final scannedCode = await Navigator.push(
                           context,
@@ -192,8 +195,10 @@ class HomePage extends StatelessWidget {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   onTap: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (_) => PosSelectionPage()));
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const PosSelectionPage()));
                   },
                 ),
 
@@ -326,8 +331,8 @@ class HomePage extends StatelessWidget {
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
       onTap: () {
         if (title == "Cambiar Almacen") {
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (_) => PosSelectionPage()));
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const PosSelectionPage()));
         } else {
           _navigateToPage(context, pageIndex);
         }

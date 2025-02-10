@@ -17,7 +17,7 @@ class StockManagementBloc
     on<LoadStockEvent>(_onLoadStock);
     on<UpdateStockItemEvent>(_onUpdateStockItem);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
-    on<ToggleSearchEvent>(_onToggleSearchEvent);
+    //on<ToggleSearchEvent>(_onToggleSearchEvent);
   }
 
   /// 🔹 Load Stock Items
@@ -40,16 +40,23 @@ class StockManagementBloc
   Future<void> _onUpdateStockItem(
       UpdateStockItemEvent event, Emitter<StockManagementState> emit) async {
     if (state is StockLoaded) {
+      final currentState = state as StockLoaded;
+
       try {
         await stockRepository.updateStockItem(event.updatedItem);
-        final updatedStock = await stockRepository.getAllStockItems();
 
-        emit(const StockLoading()); // 🔹 Ensures UI refresh
+        // 🔹 Efficiently update only the modified item
+        final updatedStock = currentState.stockItems.map((item) {
+          return item.itemName == event.updatedItem.itemName
+              ? event.updatedItem
+              : item;
+        }).toList();
+
         emit(StockLoaded(
           updatedStock,
           message: 'Stock updated successfully.',
-          isSearchVisible: (state as StockLoaded).isSearchVisible,
-          searchQuery: (state as StockLoaded).searchQuery,
+          isSearchVisible: currentState.isSearchVisible,
+          searchQuery: currentState.searchQuery,
         ));
       } catch (e) {
         emit(StockError('Error updating stock: ${e.toString()}'));
@@ -58,7 +65,7 @@ class StockManagementBloc
   }
 
   /// 🔹 Toggle Search Bar Visibility
-  void _onToggleSearchEvent(
+  /*void _onToggleSearchEvent(
       ToggleSearchEvent event, Emitter<StockManagementState> emit) {
     if (state is StockLoaded) {
       final currentState = state as StockLoaded;
@@ -69,7 +76,7 @@ class StockManagementBloc
         searchQuery: currentState.searchQuery,
       ));
     }
-  }
+  }*/
 
   Future<void> _onDeleteAllStock(
       DeleteAllStockEvent event, Emitter<StockManagementState> emit) async {

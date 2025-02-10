@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dream_pedidos/main.dart';
 import 'package:dream_pedidos/presentation/cubit/pos_cubit.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class PosSelectionPage extends StatelessWidget {
   const PosSelectionPage({super.key});
@@ -23,6 +24,16 @@ class PosSelectionPage extends StatelessWidget {
         "title": "Bar Hall",
         "pos": PosType.bar,
         "icon": Icons.local_bar,
+      },
+      {
+        "title": "Cafe del Mar",
+        "pos": PosType.cafeDelMar,
+        "icon": LucideIcons.sunset,
+      },
+      {
+        "title": "Santa Rosa",
+        "pos": PosType.santaRosa,
+        "icon": LucideIcons.beef,
       },
     ];
 

@@ -1,7 +1,7 @@
 // pos_selection_cubit.dart
 import 'package:bloc/bloc.dart';
 
-enum PosType { restaurant, beachClub, bar }
+enum PosType { restaurant, beachClub, bar, cafeDelMar, santaRosa }
 
 extension PosTypeExtension on PosType {
   String get name {
@@ -12,6 +12,10 @@ extension PosTypeExtension on PosType {
         return "Beach Club";
       case PosType.bar:
         return "Bar Hall";
+      case PosType.cafeDelMar:
+        return "Cafe del Mar";
+      case PosType.santaRosa:
+        return "Santa Rosa";
     }
   }
 }

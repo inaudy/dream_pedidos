@@ -23,6 +23,10 @@ StockDatabase createDatabaseForPos(PosType pos) {
       return StockDatabase(dbName: 'beach_club.db');
     case PosType.bar:
       return StockDatabase(dbName: 'bar.db');
+    case PosType.cafeDelMar:
+      return StockDatabase(dbName: 'cafedelmar.db');
+    case PosType.santaRosa:
+      return StockDatabase(dbName: 'santarosa.db');
   }
 }
 
@@ -35,6 +39,10 @@ RecipeDatabase createRecipeDatabaseForPos(PosType pos) {
       return RecipeDatabase(dbName: 'beach_club_recipes.db');
     case PosType.bar:
       return RecipeDatabase(dbName: 'bar_recipes.db');
+    case PosType.cafeDelMar:
+      return RecipeDatabase(dbName: 'cafedelmar_recipes.db');
+    case PosType.santaRosa:
+      return RecipeDatabase(dbName: 'santarosa_recipes.db');
   }
 }
 

@@ -13,36 +13,38 @@ class StockManagePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<StockManagementBloc, StockManagementState>(
       listener: (context, state) {
-        if (state is StockEditDialogState) {
-          _showStockEditDialog(context, state.stockItem);
-        } else if (state is StockLoaded) {
+        if (state is StockLoaded &&
+            state.message == 'Stock updated successfully.') {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Stock actualizado correctamente")),
           );
         }
       },
       builder: (context, state) {
+        final searchState = context.watch<StockSearchCubit>().state;
         if (state is StockLoading) {
           return const Center(child: CircularProgressIndicator());
         } else if (state is StockLoaded) {
-          final filteredStock = _applySearchFilter(
-            state.stockItems,
-            context.watch<StockSearchCubit>().state,
-          );
+          final filteredStock =
+              _applySearchFilter(state.stockItems, searchState.query);
           return Scaffold(
-            body: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildSearchBar(context, state.isSearchVisible),
-                Expanded(child: _buildCategorizedList(context, filteredStock)),
+            appBar: AppBar(
+              title: const Text("Stock Management"),
+              actions: [
+                IconButton(
+                  icon:
+                      Icon(searchState.isVisible ? Icons.close : Icons.search),
+                  onPressed: () =>
+                      context.read<StockSearchCubit>().toggleSearch(),
+                ),
               ],
             ),
-          );
-        } else if (state is StockError) {
-          return Center(
-            child: Text(
-              'Error: ${state.message}',
-              style: const TextStyle(color: Colors.red),
+            body: Column(
+              children: [
+                if (searchState.isVisible)
+                  _buildSearchBar(context), // ✅ Conditionally render search bar
+                Expanded(child: _buildCategorizedList(context, filteredStock)),
+              ],
             ),
           );
         }
@@ -64,10 +66,10 @@ class StockManagePage extends StatelessWidget {
         return AlertDialog(
           title: Text(item.itemName),
           content: TextFormField(
-            controller: stockController,
-            decoration: const InputDecoration(labelText: 'Stock Actual'),
-            keyboardType: TextInputType.number,
-          ),
+              controller: stockController,
+              decoration: const InputDecoration(labelText: 'Stock Actual'),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -93,30 +95,32 @@ class StockManagePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context, bool isSearchVisible) {
-    return isSearchVisible
-        ? Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              onChanged: (query) =>
-                  context.read<StockSearchCubit>().updateSearchQuery(query),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: 'Buscar...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          )
-        : const SizedBox.shrink();
+  Widget _buildSearchBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: TextField(
+        onChanged: (query) =>
+            context.read<StockSearchCubit>().updateSearchQuery(query),
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () => context.read<StockSearchCubit>().clearSearch(),
+          ),
+          hintText: 'Buscar...',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+    );
   }
 
   List<StockItem> _applySearchFilter(List<StockItem> stockItems, String query) {
     if (query.isEmpty) return stockItems;
-    final lowerQuery = query.toLowerCase();
     return stockItems
-        .where((item) => item.itemName.toLowerCase().contains(lowerQuery))
+        .where(
+            (item) => item.itemName.toLowerCase().contains(query.toLowerCase()))
         .toList();
   }
 
