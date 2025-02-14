@@ -1,6 +1,7 @@
 import 'package:dream_pedidos/presentation/blocs/recipe_parser_bloc/recipe_parser_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_parser_bloc/file_stock_bloc.dart';
+import 'package:dream_pedidos/presentation/widgets/common_button.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,24 +22,21 @@ class ConfigPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildConfigButton(
+            CommonButton(
               icon: Icons.restart_alt,
               label: 'Reset Stock',
-              textColor: Colors.black, // White text for critical actions
               onPressed: () => _resetStock(stockBloc, messenger),
             ),
             const SizedBox(height: 6),
-            _buildConfigButton(
+            CommonButton(
               icon: Icons.upload_file,
               label: 'Cargar Stocks',
-              textColor: Colors.black, // Darker text for neutral actions
               onPressed: () => _uploadFile(stockBloc, fileStockBloc, messenger),
             ),
             const SizedBox(height: 6),
-            _buildConfigButton(
+            CommonButton(
               icon: Icons.upload_file,
               label: 'Cargar Escandallos',
-              textColor: Colors.black,
               onPressed: () =>
                   _uploadEscandallos(fileEscandallosBloc, messenger),
             ),
@@ -48,25 +46,6 @@ class ConfigPage extends StatelessWidget {
     );
   }
 
-  /// 🔹 Standardized button style with dynamic text color
-  Widget _buildConfigButton({
-    required IconData icon,
-    required String label,
-    required Color textColor, // Text color parameter
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, color: textColor),
-      label: Text(label, style: TextStyle(color: textColor)),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-  }
-
-  //load stocks
   Future<void> _uploadFile(StockManagementBloc stockBloc,
       FileStockBloc fileStockBloc, ScaffoldMessengerState messenger) async {
     final result = await FilePicker.platform.pickFiles(

@@ -1,13 +1,33 @@
 import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/stock_search_cubit.dart';
+import 'package:dream_pedidos/presentation/widgets/stock_edit_dialog.dart';
+import 'package:dream_pedidos/utils/format_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:intl/intl.dart';
 
-class StockManagePage extends StatelessWidget {
+class StockManagePage extends StatefulWidget {
   const StockManagePage({super.key});
+
+  @override
+  State<StockManagePage> createState() => _StockManagePageState();
+}
+
+class _StockManagePageState extends State<StockManagePage> {
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,70 +47,14 @@ class StockManagePage extends StatelessWidget {
         } else if (state is StockLoaded) {
           final filteredStock =
               _applySearchFilter(state.stockItems, searchState.query);
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text("Stock Management"),
-              actions: [
-                IconButton(
-                  icon:
-                      Icon(searchState.isVisible ? Icons.close : Icons.search),
-                  onPressed: () =>
-                      context.read<StockSearchCubit>().toggleSearch(),
-                ),
-              ],
-            ),
-            body: Column(
-              children: [
-                if (searchState.isVisible)
-                  _buildSearchBar(context), // ✅ Conditionally render search bar
-                Expanded(child: _buildCategorizedList(context, filteredStock)),
-              ],
-            ),
+          return Column(
+            children: [
+              if (searchState.isVisible) _buildSearchBar(context),
+              Expanded(child: _buildCategorizedList(context, filteredStock)),
+            ],
           );
         }
         return const Center(child: Text('No hay datos disponibles.'));
-      },
-    );
-  }
-
-  void _showStockEditDialog(BuildContext context, StockItem item) {
-    if (item.itemName.isEmpty) return;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        TextEditingController stockController = TextEditingController(
-          text: item.actualStock.toString(),
-        );
-
-        return AlertDialog(
-          title: Text(item.itemName),
-          content: TextFormField(
-              controller: stockController,
-              decoration: const InputDecoration(labelText: 'Stock Actual'),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final updatedStock = double.tryParse(stockController.text);
-                if (updatedStock != null) {
-                  context.read<StockManagementBloc>().add(
-                        UpdateStockItemEvent(
-                          item.copyWith(actualStock: updatedStock),
-                        ),
-                      );
-                }
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Guardar'),
-            ),
-          ],
-        );
       },
     );
   }
@@ -99,13 +63,17 @@ class StockManagePage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TextField(
+        controller: _searchController,
         onChanged: (query) =>
             context.read<StockSearchCubit>().updateSearchQuery(query),
         decoration: InputDecoration(
           prefixIcon: const Icon(Icons.search),
           suffixIcon: IconButton(
             icon: const Icon(Icons.clear),
-            onPressed: () => context.read<StockSearchCubit>().clearSearch(),
+            onPressed: () {
+              _searchController.clear();
+              context.read<StockSearchCubit>().clearSearch();
+            },
           ),
           hintText: 'Buscar...',
           border: OutlineInputBorder(
@@ -141,9 +109,8 @@ class StockManagePage extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFBA0C2F).withOpacity(0.8),
-          ),
+          decoration:
+              BoxDecoration(color: const Color(0xFFBA0C2F).withOpacity(0.8)),
           child: Row(
             children: [
               Text(
@@ -170,7 +137,8 @@ class StockManagePage extends StatelessWidget {
         extentRatio: 0.25,
         children: [
           SlidableAction(
-            onPressed: (_) => _showStockEditDialog(context, item),
+            onPressed: (_) =>
+                EditItemDialog.show(context, item, 'Stock Actual'),
             backgroundColor: Colors.blue,
             foregroundColor: Colors.white,
             icon: Icons.edit,
@@ -188,9 +156,10 @@ class StockManagePage extends StatelessWidget {
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
           subtitle: Text(
-              'Mín: ${NumberFormat('#.#').format(item.minimumLevel)} | Máx: ${NumberFormat('#.#').format(item.maximumLevel)} | Traspaso: ${item.traspaso}'),
+            'Mín: ${formatForDisplay(item.minimumLevel)} | Máx: ${formatForDisplay(item.maximumLevel)} | Traspaso: ${item.traspaso}',
+          ),
           leading: Text(
-            NumberFormat('#.#').format(item.actualStock),
+            formatForDisplay(item.actualStock),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),

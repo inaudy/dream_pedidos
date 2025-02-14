@@ -3,7 +3,9 @@ import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/edit_stock_cubit.dart';
 import 'package:dream_pedidos/presentation/cubit/pos_cubit.dart';
+import 'package:dream_pedidos/presentation/cubit/stock_search_cubit.dart';
 import 'package:dream_pedidos/presentation/pages/ean13_scanner_page.dart';
+import 'package:dream_pedidos/presentation/pages/pdf_service.dart';
 import 'package:dream_pedidos/presentation/pages/pos_selection_page.dart';
 import 'package:dream_pedidos/presentation/pages/refill_history_page.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +25,7 @@ class HomePage extends StatelessWidget {
   List<Widget> get _pages => [
         const UploadSalesPage(),
         const StockManagePage(),
-        RefillReportPage(stockRepository: stockRepository),
+        const RefillReportPage(),
         const RefillHistoryPage(),
         const ConfigPage(),
       ];
@@ -86,16 +88,12 @@ class HomePage extends StatelessWidget {
           BlocBuilder<BottomNavcubit, int>(
             builder: (context, navState) {
               if (navState == 1) {
-                // Show search and barcode icons only on StockManagePage
                 return Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.search),
-                      color: Colors.white,
+                      icon: const Icon(Icons.search, color: Colors.white),
                       onPressed: () {
-                        context
-                            .read<StockManagementBloc>()
-                            .add(ToggleSearchEvent());
+                        context.read<StockSearchCubit>().toggleSearch();
                       },
                     ),
                     IconButton(
@@ -148,6 +146,42 @@ class HomePage extends StatelessWidget {
                     ),
                   ],
                 );
+              } else if (navState == 2) {
+                return IconButton(
+                  icon: const Icon(Icons.email, color: Colors.white),
+                  onPressed: () async {
+                    final stockState =
+                        context.read<StockManagementBloc>().state;
+                    final posState = context.read<PosSelectionCubit>().state;
+                    final posName = posState.name;
+
+                    if (stockState is StockLoaded) {
+                      final filteredStockItems =
+                          stockState.stockItems.where((item) {
+                        return item.actualStock <= item.minimumLevel &&
+                            !(item.actualStock == item.minimumLevel &&
+                                item.minimumLevel == item.maximumLevel);
+                      }).toList();
+
+                      if (filteredStockItems.isEmpty) {
+                        _showSnackBar(
+                            context, '⚠️ No hay productos para generar el PDF');
+                        return;
+                      }
+
+                      _showSnackBar(context, '📤 Enviando PDF por correo...');
+
+                      try {
+                        await PdfService.sendEmailWithPdf(filteredStockItems,
+                            "Reporte de Reposición - $posName");
+                        _showSnackBar(context, '✅ Correo enviado con éxito.');
+                      } catch (e) {
+                        _showSnackBar(
+                            context, '❌ Error al enviar el correo: $e');
+                      }
+                    }
+                  },
+                );
               }
               return const SizedBox.shrink();
             },
@@ -173,21 +207,6 @@ class HomePage extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.only(left: 16),
               children: [
-                // Display only the current POS
-                /*BlocBuilder<PosSelectionCubit, PosType>(
-                  builder: (context, currentPos) {
-                    return ListTile(
-                      leading:
-                          const Icon(Icons.storefront, color: Colors.black),
-                      title: Text(
-                        "${currentPos.name}",
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                    );
-                  },
-                ),*/
-                // Button to Change POS
                 ListTile(
                   leading: const Icon(Icons.swap_horiz, color: Colors.blue),
                   title: const Text(
@@ -201,10 +220,7 @@ class HomePage extends StatelessWidget {
                             builder: (_) => const PosSelectionPage()));
                   },
                 ),
-
                 const Divider(),
-
-                // Drawer navigation items
                 _buildDrawerItem(
                   context,
                   icon: Icons.sync,
@@ -243,7 +259,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  /// Build the list of available POS options.
   List<Widget> _buildPosList(BuildContext context) {
     final posOptions = [
       {
@@ -268,17 +283,13 @@ class HomePage extends StatelessWidget {
         leading: Icon(option["icon"] as IconData),
         title: Text(option["title"] as String),
         onTap: () {
-          // Update the selected POS.
           context.read<PosSelectionCubit>().selectPos(option["pos"] as PosType);
-          // Optionally, if you need to reinitialize POS-dependent blocs/repositories,
-          // you can trigger a navigation pushReplacement here.
-          Navigator.of(context).pop(); // Close the drawer.
+          Navigator.of(context).pop();
         },
       );
     }).toList();
   }
 
-  /// Drawer header (for example, including the logo)
   Widget _buildDrawerHeader() {
     return DrawerHeader(
       decoration: const BoxDecoration(
@@ -292,11 +303,10 @@ class HomePage extends StatelessWidget {
             height: 60,
           ),
           const SizedBox(height: 8),
-          // Optionally, show the current POS here as well:
           BlocBuilder<PosSelectionCubit, PosType>(
             builder: (context, pos) {
               return Text(
-                "POS: ${pos.name}",
+                pos.name,
                 style: const TextStyle(color: Colors.white, fontSize: 16),
               );
             },
@@ -305,23 +315,6 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-
-  /* Widget _buildDrawerItem(BuildContext context,
-      {required IconData icon, required String title, required int pageIndex}) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(
-        title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-      ),
-      onTap: () {
-        _navigateToPage(context, pageIndex);
-      },
-      horizontalTitleGap: 10,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      dense: true,
-    );
-  }*/
 
   Widget _buildDrawerItem(BuildContext context,
       {required IconData icon, required String title, required int pageIndex}) {
@@ -345,10 +338,15 @@ class HomePage extends StatelessWidget {
 
   void _navigateToPage(BuildContext context, int pageIndex) {
     context.read<BottomNavcubit>().updateIndex(pageIndex);
-    Navigator.of(context).pop(); // Close the drawer
+    Navigator.of(context).pop();
   }
 
-  /// This dialog is used to edit a specific stock item.
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   void _showStockEditDialog(BuildContext context, StockItem item) {
     showDialog(
       context: context,
@@ -394,7 +392,6 @@ class HomePage extends StatelessWidget {
                         eanCode: item.eanCode,
                         errorPercentage: item.errorPercentage,
                       );
-                      // Dispatch the update event to StockManagementBloc.
                       context
                           .read<StockManagementBloc>()
                           .add(UpdateStockItemEvent(updatedItem));

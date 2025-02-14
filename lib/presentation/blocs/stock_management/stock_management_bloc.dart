@@ -10,17 +10,15 @@ part 'stock_management_state.dart';
 class StockManagementBloc
     extends Bloc<StockManagementEvent, StockManagementState> {
   final StockRepository stockRepository;
-  final String posKey; // e.g., "restaurant", "bar", or "beachClub"
+  final String posKey;
 
   StockManagementBloc(this.stockRepository, {required this.posKey})
       : super(const StockManagementInitial()) {
     on<LoadStockEvent>(_onLoadStock);
     on<UpdateStockItemEvent>(_onUpdateStockItem);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
-    //on<ToggleSearchEvent>(_onToggleSearchEvent);
   }
 
-  /// 🔹 Load Stock Items
   Future<void> _onLoadStock(
       LoadStockEvent event, Emitter<StockManagementState> emit) async {
     emit(const StockLoading());
@@ -29,7 +27,7 @@ class StockManagementBloc
       emit(StockLoaded(
         stockItems,
         message: 'Stock data loaded successfully.',
-        isSearchVisible: false, // Ensure visibility is defined
+        isSearchVisible: false,
         searchQuery: '',
       ));
     } catch (error) {
@@ -45,7 +43,6 @@ class StockManagementBloc
       try {
         await stockRepository.updateStockItem(event.updatedItem);
 
-        // 🔹 Efficiently update only the modified item
         final updatedStock = currentState.stockItems.map((item) {
           return item.itemName == event.updatedItem.itemName
               ? event.updatedItem
@@ -63,20 +60,6 @@ class StockManagementBloc
       }
     }
   }
-
-  /// 🔹 Toggle Search Bar Visibility
-  /*void _onToggleSearchEvent(
-      ToggleSearchEvent event, Emitter<StockManagementState> emit) {
-    if (state is StockLoaded) {
-      final currentState = state as StockLoaded;
-      emit(StockLoaded(
-        currentState.stockItems,
-        message: currentState.message,
-        isSearchVisible: !currentState.isSearchVisible, // Toggle visibility
-        searchQuery: currentState.searchQuery,
-      ));
-    }
-  }*/
 
   Future<void> _onDeleteAllStock(
       DeleteAllStockEvent event, Emitter<StockManagementState> emit) async {
