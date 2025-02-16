@@ -1,7 +1,6 @@
 import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:dream_pedidos/data/repositories/stock_repository.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
-import 'package:dream_pedidos/presentation/cubit/edit_stock_cubit.dart';
 import 'package:dream_pedidos/presentation/cubit/pos_cubit.dart';
 import 'package:dream_pedidos/presentation/cubit/stock_search_cubit.dart';
 import 'package:dream_pedidos/presentation/pages/ean13_scanner_page.dart';
@@ -10,6 +9,7 @@ import 'package:dream_pedidos/presentation/pages/pos_selection_page.dart';
 import 'package:dream_pedidos/presentation/pages/refill_history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dream_pedidos/presentation/widgets/stock_edit_dialog.dart';
 import 'package:dream_pedidos/presentation/cubit/bottom_nav_cubit.dart';
 import 'package:dream_pedidos/presentation/pages/config.dart';
 import 'package:dream_pedidos/presentation/pages/refill_report_screen.dart';
@@ -105,13 +105,13 @@ class HomePage extends StatelessWidget {
                         final scannedCode = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const EAN13ScannerPage()),
+                            builder: (context) => const EAN13ScannerPage(),
+                          ),
                         );
 
                         if (scannedCode != null && scannedCode is String) {
                           final stockState =
                               context.read<StockManagementBloc>().state;
-
                           if (stockState is StockLoaded) {
                             final matchingItem =
                                 stockState.stockItems.firstWhere(
@@ -130,9 +130,23 @@ class HomePage extends StatelessWidget {
                             );
 
                             if (matchingItem.itemName.isNotEmpty) {
-                              _showStockEditDialog(context, matchingItem);
+                              // Open a dialog to update actual stock.
+                              EditValueDialog.show(
+                                context,
+                                title: matchingItem.itemName,
+                                labelText: 'Stock Actual',
+                                initialValue: matchingItem.actualStock,
+                                onSave: (newActualStock) {
+                                  final updatedItem = matchingItem.copyWith(
+                                    actualStock: newActualStock,
+                                  );
+                                  // Dispatch an event to update the actual stock.
+                                  context.read<StockManagementBloc>().add(
+                                        UpdateStockItemEvent(updatedItem, 0),
+                                      );
+                                },
+                              );
                             } else {
-                              // Show a snack bar or alert if no matching item is found
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -172,8 +186,8 @@ class HomePage extends StatelessWidget {
                       _showSnackBar(context, '📤 Enviando PDF por correo...');
 
                       try {
-                        await PdfService.sendEmailWithPdf(filteredStockItems,
-                            "Reporte de Reposición - $posName");
+                        await PdfService.sendEmailWithPdf(
+                            filteredStockItems, "$posName");
                         _showSnackBar(context, '✅ Correo enviado con éxito.');
                       } catch (e) {
                         _showSnackBar(
@@ -344,67 +358,6 @@ class HomePage extends StatelessWidget {
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
-    );
-  }
-
-  void _showStockEditDialog(BuildContext context, StockItem item) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return BlocProvider(
-          create: (_) => StockItemEditCubit(item),
-          child: Builder(
-            builder: (context) {
-              return AlertDialog(
-                title: Text(item.itemName),
-                content: BlocBuilder<StockItemEditCubit, StockItemEditState>(
-                  builder: (context, state) {
-                    return TextFormField(
-                      initialValue: state.actualStock.toString(),
-                      decoration:
-                          const InputDecoration(labelText: 'Stock Actual'),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        context
-                            .read<StockItemEditCubit>()
-                            .actualStockChanged(value);
-                      },
-                    );
-                  },
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    child: const Text('Cancelar'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      final updatedItem = StockItem(
-                        itemName: item.itemName,
-                        minimumLevel: item.minimumLevel,
-                        maximumLevel: item.maximumLevel,
-                        actualStock: context
-                            .read<StockItemEditCubit>()
-                            .state
-                            .actualStock,
-                        category: item.category,
-                        traspaso: item.traspaso,
-                        eanCode: item.eanCode,
-                        errorPercentage: item.errorPercentage,
-                      );
-                      context
-                          .read<StockManagementBloc>()
-                          .add(UpdateStockItemEvent(updatedItem));
-                      Navigator.pop(dialogContext);
-                    },
-                    child: const Text('Guardar'),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      },
     );
   }
 }

@@ -16,31 +16,45 @@ class ConfigPage extends StatelessWidget {
     final stockBloc = context.read<StockManagementBloc>();
     final messenger = ScaffoldMessenger.of(context);
 
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CommonButton(
-              icon: Icons.restart_alt,
-              label: 'Reset Stock',
-              onPressed: () => _resetStock(stockBloc, messenger),
-            ),
-            const SizedBox(height: 6),
-            CommonButton(
-              icon: Icons.upload_file,
-              label: 'Cargar Stocks',
-              onPressed: () => _uploadFile(stockBloc, fileStockBloc, messenger),
-            ),
-            const SizedBox(height: 6),
-            CommonButton(
-              icon: Icons.upload_file,
-              label: 'Cargar Escandallos',
-              onPressed: () =>
-                  _uploadEscandallos(fileEscandallosBloc, messenger),
-            ),
-          ],
+    return BlocListener<FileStockBloc, FileStockState>(
+      listener: (context, state) {
+        if (state is FileStockUploadSuccess) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text("✅ Stock cargado correctamente!")),
+          );
+        } else if (state is FileStockUploadFailure) {
+          messenger.showSnackBar(
+            SnackBar(content: Text("❌ Error: ${state.errorMessage}")),
+          );
+        }
+      },
+      child: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CommonButton(
+                icon: Icons.restart_alt,
+                label: 'Reset Stock',
+                onPressed: () => _resetStock(stockBloc, messenger),
+              ),
+              const SizedBox(height: 6),
+              CommonButton(
+                icon: Icons.upload_file,
+                label: 'Cargar Stocks',
+                onPressed: () =>
+                    _uploadFile(stockBloc, fileStockBloc, messenger),
+              ),
+              const SizedBox(height: 6),
+              CommonButton(
+                icon: Icons.upload_file,
+                label: 'Cargar Escandallos',
+                onPressed: () =>
+                    _uploadEscandallos(fileEscandallosBloc, messenger),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -56,7 +70,6 @@ class ConfigPage extends StatelessWidget {
     if (result != null && result.files.single.path != null) {
       final filePath = result.files.single.path!;
       fileStockBloc.add(FileStockUploadEvent(filePath));
-      stockBloc.add(LoadStockEvent());
     } else {
       messenger.showSnackBar(
         const SnackBar(content: Text('No file selected')),

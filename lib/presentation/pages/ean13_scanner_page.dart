@@ -44,7 +44,7 @@ class _EAN13ScannerPageState extends State<EAN13ScannerPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EAN13 Scanner'),
+        title: const Text('Busqueda artículo por código EAN13'),
       ),
       body: Stack(
         children: [

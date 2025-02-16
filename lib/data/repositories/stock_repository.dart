@@ -22,5 +22,6 @@ abstract class StockRepository {
 
   Future<List<RefillHistoryItem>> getRefillHistory();
   Future<void> revertRefill(int refillId);
-  Future<void> saveRefillHistory(String itemName, double quantity);
+  Future<void> saveRefillHistory(
+      String itemName, double adjustedRefill, double errorPercentage);
 }

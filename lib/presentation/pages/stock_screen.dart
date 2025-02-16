@@ -42,19 +42,20 @@ class _StockManagePageState extends State<StockManagePage> {
       },
       builder: (context, state) {
         final searchState = context.watch<StockSearchCubit>().state;
-        if (state is StockLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is StockLoaded) {
-          final filteredStock =
-              _applySearchFilter(state.stockItems, searchState.query);
-          return Column(
-            children: [
-              if (searchState.isVisible) _buildSearchBar(context),
-              Expanded(child: _buildCategorizedList(context, filteredStock)),
-            ],
-          );
+        List<StockItem> stockItems = [];
+        if (state is StockLoaded) {
+          stockItems = state.stockItems;
+        } else if (state is StockUpdated) {
+          stockItems = state.stockItems;
         }
-        return const Center(child: Text('No hay datos disponibles.'));
+
+        final filteredStock = _applySearchFilter(stockItems, searchState.query);
+        return Column(
+          children: [
+            if (searchState.isVisible) _buildSearchBar(context),
+            Expanded(child: _buildCategorizedList(context, filteredStock)),
+          ],
+        );
       },
     );
   }
@@ -130,40 +131,75 @@ class _StockManagePageState extends State<StockManagePage> {
   }
 
   Widget _buildStockItem(BuildContext context, StockItem item) {
-    return Slidable(
-      key: ValueKey(item.itemName),
-      startActionPane: ActionPane(
-        motion: const DrawerMotion(),
-        extentRatio: 0.25,
-        children: [
-          SlidableAction(
-            onPressed: (_) =>
-                EditItemDialog.show(context, item, 'Stock Actual'),
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            icon: Icons.edit,
-            label: 'Editar',
+    return BlocBuilder<StockManagementBloc, StockManagementState>(
+      buildWhen: (previous, current) {
+        if (current is StockUpdated) {
+          // 🔹 Ensure rebuilding only for the updated item
+          return current.updatedItem.itemName == item.itemName;
+        }
+        return false;
+      },
+      builder: (context, state) {
+        final updatedItem = (state is StockUpdated &&
+                state.updatedItem.itemName == item.itemName)
+            ? state.updatedItem
+            : item;
+        return Slidable(
+          key: ValueKey(item.itemName),
+          startActionPane: ActionPane(
+            motion: const DrawerMotion(),
+            extentRatio: 0.25,
+            children: [
+              SlidableAction(
+                onPressed: (_) {
+                  // Use the generic dialog to update actual stock.
+                  EditValueDialog.show(
+                    context,
+                    title: updatedItem.itemName,
+                    labelText: 'Actual Stock',
+                    initialValue: updatedItem.actualStock,
+                    onSave: (newActualStock) {
+                      // Create an updated item with the new stock.
+                      final newItem =
+                          updatedItem.copyWith(actualStock: newActualStock);
+                      // Dispatch update event (refillQuantity is 0 in this case).
+                      context
+                          .read<StockManagementBloc>()
+                          .add(UpdateStockItemEvent(newItem, 0));
+                    },
+                  );
+                },
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                icon: Icons.edit,
+                label: 'Editar',
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        elevation: 2.0,
-        child: ListTile(
-          title: Text(
-            item.itemName,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          child: Card(
+            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            elevation: 2.0,
+            child: ListTile(
+              title: Text(
+                updatedItem.itemName, // ✅ Updates dynamically
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                'Mín: ${formatForDisplay(updatedItem.minimumLevel)} | Máx: ${formatForDisplay(updatedItem.maximumLevel)} | Traspaso: ${updatedItem.traspaso}',
+              ),
+              leading: Text(
+                formatForDisplay(
+                    updatedItem.actualStock), // ✅ Updates dynamically
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
-          subtitle: Text(
-            'Mín: ${formatForDisplay(item.minimumLevel)} | Máx: ${formatForDisplay(item.maximumLevel)} | Traspaso: ${item.traspaso}',
-          ),
-          leading: Text(
-            formatForDisplay(item.actualStock),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 

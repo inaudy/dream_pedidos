@@ -47,6 +47,7 @@ class StockDatabase implements StockRepository {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             item_name TEXT NOT NULL,
             refill_quantity REAL NOT NULL,
+            error_percentage REAL NOT NULL DEFAULT 0,
             refill_date TEXT NOT NULL,
             FOREIGN KEY (item_name) REFERENCES stock(item_name) ON DELETE CASCADE
           )
@@ -78,13 +79,15 @@ class StockDatabase implements StockRepository {
 
   // 🔹 Save a refill entry to the history table
   @override
-  Future<void> saveRefillHistory(String itemName, double quantity) async {
+  Future<void> saveRefillHistory(
+      String itemName, double adjustedRefill, double errorPercentage) async {
     final db = await database;
     await db.insert(
       'refill_history',
       {
         'item_name': itemName,
-        'refill_quantity': quantity,
+        'refill_quantity': adjustedRefill,
+        'error_percentage': errorPercentage,
         'refill_date': DateTime.now().toIso8601String(),
       },
     );
@@ -99,26 +102,30 @@ class StockDatabase implements StockRepository {
     return result.map((map) => RefillHistoryItem.fromMap(map)).toList();
   }
 
-// 🔹 Revert a refill (Remove from history & Restore stock)
   @override
   Future<void> revertRefill(int refillId) async {
     final db = await database;
 
-    // Get refill data
+    // Get refill data including error_percentage.
     final result = await db
         .query('refill_history', where: 'id = ?', whereArgs: [refillId]);
 
     if (result.isNotEmpty) {
       final itemName = result.first['item_name'] as String;
-      final quantity = result.first['refill_quantity'] as double;
+      final adjustedRefill = result.first['refill_quantity'] as double;
+      final errorPercentage =
+          result.first['error_percentage'] as double? ?? 0.0;
 
-      // Restore stock
+      // Calculate raw refill amount.
+      final rawRefill = adjustedRefill / (1 + errorPercentage / 100);
+
+      // Restore stock by subtracting the raw refill.
       await db.rawUpdate(
         'UPDATE stock SET actual_stock = actual_stock - ? WHERE item_name = ?',
-        [quantity, itemName],
+        [rawRefill, itemName],
       );
 
-      // Delete from history
+      // Delete the history entry.
       await db.delete('refill_history', where: 'id = ?', whereArgs: [refillId]);
     }
   }
@@ -152,11 +159,11 @@ class StockDatabase implements StockRepository {
     await batch.commit(noResult: true);
 
     // Backup stock after bulk insert
-    await db.execute('DELETE FROM stock_backup');
+    /* await db.execute('DELETE FROM stock_backup');
     await db.execute('''
       INSERT INTO stock_backup
       SELECT * FROM stock
-    ''');
+    ''');*/
   }
 
   @override

@@ -23,13 +23,6 @@ class XLSXParser {
       );
     }).toList();
 
-    try {
-      await file.delete();
-      print('File deleted successfully: ${file.path}');
-    } catch (e) {
-      print('Error deleting file: ${e.toString()}');
-    }
-
     return salesData;
   }
 

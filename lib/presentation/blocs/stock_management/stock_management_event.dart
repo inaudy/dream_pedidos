@@ -11,10 +11,11 @@ class LoadStockEvent extends StockManagementEvent {}
 /// 🔹 Update Stock Item
 class UpdateStockItemEvent extends StockManagementEvent {
   final StockItem updatedItem;
-  UpdateStockItemEvent(this.updatedItem);
+  final double refillQuantity;
+  UpdateStockItemEvent(this.updatedItem, this.refillQuantity);
 
   @override
-  List<Object> get props => [updatedItem];
+  List<Object> get props => [updatedItem, refillQuantity];
 }
 
 /// 🔹 Delete All Stock Items

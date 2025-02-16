@@ -20,6 +20,7 @@ class FileStockBloc extends Bloc<FileStockEvent, FileStockState> {
         await _stockRepository.addStockItems(stockDataList);
 
         emit(FileStockUploadSuccess(stockDataList));
+
         _stockManagementBloc.add(LoadStockEvent());
       } catch (e) {
         emit(FileStockUploadFailure(e.toString()));

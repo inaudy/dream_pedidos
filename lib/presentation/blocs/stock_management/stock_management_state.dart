@@ -1,24 +1,48 @@
 part of 'stock_management_bloc.dart';
 
-/// 🔹 Base Class for All Stock Management States
 abstract class StockManagementState extends Equatable {
   const StockManagementState();
 
   @override
-  List<Object?> get props => [];
+  List<Object> get props => [];
 }
 
-/// 🔹 Initial State
+/// 🔹 Initial state (before anything loads)
 class StockManagementInitial extends StockManagementState {
   const StockManagementInitial();
 }
 
-/// 🔹 Loading State
+/// 🔹 Loading state (when fetching stock data)
 class StockLoading extends StockManagementState {
   const StockLoading();
 }
 
-/// 🔹 Stock Loaded (Main State)
+/// 🔹 Updating state (when editing a stock item)
+class StockUpdating extends StockManagementState {
+  final StockItem
+      updatingItem; // ✅ This allows UI to track the currently updating item
+
+  const StockUpdating(this.updatingItem);
+
+  @override
+  List<Object> get props => [updatingItem];
+}
+
+/// 🔹 Updated state (when a single item updates)
+class StockUpdated extends StockManagementState {
+  final List<StockItem> stockItems; // ✅ Full stock list
+  final StockItem updatedItem; // ✅ The recently updated item
+
+  const StockUpdated({
+    required this.stockItems,
+    required this.updatedItem,
+  });
+
+  @override
+  List<Object> get props => [stockItems, updatedItem];
+}
+
+/// 🔹 Main Stock Loaded state (UI shows stock data)
 class StockLoaded extends StockManagementState {
   final List<StockItem> stockItems;
   final String message;
@@ -33,26 +57,14 @@ class StockLoaded extends StockManagementState {
   });
 
   @override
-  List<Object?> get props =>
-      [stockItems, message, isSearchVisible, searchQuery];
+  List<Object> get props => [stockItems, message, isSearchVisible, searchQuery];
 }
 
-/// 🔹 State for Showing Edit Dialog When Barcode is Matched
-class StockEditDialogState extends StockManagementState {
-  final StockItem stockItem;
-
-  const StockEditDialogState(this.stockItem);
-
-  @override
-  List<Object?> get props => [stockItem];
-}
-
-/// 🔹 Error State
+/// 🔹 Error state (when something goes wrong)
 class StockError extends StockManagementState {
   final String message;
-
   const StockError(this.message);
 
   @override
-  List<Object?> get props => [message];
+  List<Object> get props => [message];
 }

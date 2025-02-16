@@ -1,8 +1,6 @@
 import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/item_selection_cubit.dart';
-import 'package:dream_pedidos/presentation/cubit/pos_cubit.dart';
-import 'package:dream_pedidos/presentation/pages/pdf_service.dart';
 import 'package:dream_pedidos/presentation/widgets/stock_edit_dialog.dart';
 import 'package:dream_pedidos/utils/format_utils.dart';
 import 'package:flutter/material.dart';
@@ -26,37 +24,6 @@ class _RefillReportPageState extends State<RefillReportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      /*appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.email),
-          onPressed: () async {
-            final stockState = context.read<StockManagementBloc>().state;
-            final posState = context.read<PosSelectionCubit>().state;
-            final posName = posState.name;
-
-            if (stockState is StockLoaded) {
-              final filteredStockItems =
-                  _filterStockItems(stockState.stockItems);
-
-              if (filteredStockItems.isEmpty) {
-                _showSnackBar(
-                    context, '⚠️ No hay productos para generar el PDF');
-                return;
-              }
-
-              _showSnackBar(context, '📤 Enviando PDF por correo...');
-
-              try {
-                await PdfService.sendEmailWithPdf(
-                    filteredStockItems, "Reporte de Reposición $posName");
-                _showSnackBar(context, '✅ Correo enviado con éxito.');
-              } catch (e) {
-                _showSnackBar(context, '❌ Error al enviar el correo: $e');
-              }
-            }
-          },
-        ),
-      ),*/
       body: BlocBuilder<StockManagementBloc, StockManagementState>(
         builder: (context, state) {
           if (state is StockLoading) {
@@ -80,7 +47,7 @@ class _RefillReportPageState extends State<RefillReportPage> {
     );
   }
 
-  /// Filters stock items that need refilling
+  /// Filters stock items that need refilling.
   List<StockItem> _filterStockItems(List<StockItem> stockItems) {
     return stockItems.where((item) {
       return item.actualStock <= item.minimumLevel &&
@@ -89,7 +56,7 @@ class _RefillReportPageState extends State<RefillReportPage> {
     }).toList();
   }
 
-  /// Show error messages
+  /// Shows error messages.
   Widget _buildErrorMessage(String? message) {
     return Center(
       child: Text(
@@ -100,7 +67,7 @@ class _RefillReportPageState extends State<RefillReportPage> {
     );
   }
 
-  /// Builds stock list with categorized items
+  /// Builds the stock list with categorized items.
   Widget _buildStockList(BuildContext context, List<StockItem> stockItems) {
     final categorizedData = _categorizeStockItems(stockItems);
     return ListView(
@@ -110,7 +77,18 @@ class _RefillReportPageState extends State<RefillReportPage> {
     );
   }
 
-  /// Builds each category section
+  /// Groups items by category.
+  Map<String, List<StockItem>> _categorizeStockItems(
+      List<StockItem> stockItems) {
+    final Map<String, List<StockItem>> categories = {};
+    for (var item in stockItems) {
+      final category = item.category.isEmpty ? 'Sin Categoría' : item.category;
+      categories.putIfAbsent(category, () => []).add(item);
+    }
+    return categories;
+  }
+
+  /// Builds a section for each category.
   Widget _buildCategorySection(
       BuildContext context, String category, List<StockItem> items) {
     return Column(
@@ -137,16 +115,18 @@ class _RefillReportPageState extends State<RefillReportPage> {
     );
   }
 
-  /// Builds each stock item with slide-to-edit and selection
   Widget _buildStockItem(BuildContext context, StockItem item) {
     final itemSelectionState = context.watch<ItemSelectionCubit>().state;
+
+    final double defaultRefill = item.maximumLevel - item.actualStock;
+
+    final double currentRefill =
+        itemSelectionState.quantities[item.itemName] ?? defaultRefill;
+
     final int errorPercentage = item.errorPercentage;
-    final double refillQuantity =
-        itemSelectionState.quantities[item.itemName] ??
-            (item.maximumLevel - item.actualStock);
     final double adjustedRefillQuantity = errorPercentage > 0
-        ? refillQuantity * (1 + (errorPercentage / 100))
-        : refillQuantity;
+        ? currentRefill * (1 + (errorPercentage / 100))
+        : currentRefill;
 
     return Slidable(
       key: ValueKey(item.itemName),
@@ -155,7 +135,21 @@ class _RefillReportPageState extends State<RefillReportPage> {
         extentRatio: 0.25,
         children: [
           SlidableAction(
-            onPressed: (_) => EditItemDialog.show(context, item, 'A Reponer'),
+            onPressed: (_) {
+              // Use the dialog to update the refill quantity.
+              EditValueDialog.show(
+                context,
+                title: 'Editar cantidad a reponer para ${item.itemName}',
+                labelText: 'Cantidad a reponer',
+                initialValue: currentRefill,
+                onSave: (newRefill) {
+                  // Update the stored quantity for this item.
+                  context
+                      .read<ItemSelectionCubit>()
+                      .updateItemQuantity(item.itemName, newRefill);
+                },
+              );
+            },
             backgroundColor: Colors.blue,
             foregroundColor: Colors.white,
             icon: Icons.edit,
@@ -168,12 +162,15 @@ class _RefillReportPageState extends State<RefillReportPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-          leading: Text(formatForDisplay(adjustedRefillQuantity),
-              style:
-                  const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-          title: Text(item.itemName,
-              style:
-                  const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          // Leading widget now simply displays the adjusted refill quantity.
+          leading: Text(
+            formatForDisplay(adjustedRefillQuantity),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          title: Text(
+            item.itemName,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
           subtitle: Text(
             'Actual: ${formatForDisplay(item.actualStock)} | Min: ${formatForDisplay(item.minimumLevel)} | Max: ${formatForDisplay(item.maximumLevel)}',
             style: const TextStyle(fontSize: 12),
@@ -193,7 +190,7 @@ class _RefillReportPageState extends State<RefillReportPage> {
     );
   }
 
-  /// Bottom bar to submit selected items
+  /// Bottom bar to submit selected items.
   Widget _buildBottomBar(BuildContext context) {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
@@ -215,17 +212,7 @@ class _RefillReportPageState extends State<RefillReportPage> {
     );
   }
 
-  /// Categorizes stock items
-  Map<String, List<StockItem>> _categorizeStockItems(
-      List<StockItem> stockItems) {
-    return {
-      for (var item in stockItems)
-        item.category.isEmpty ? 'Sin Categoría' : item.category: [
-          ...stockItems.where((i) => i.category == item.category)
-        ]
-    };
-  }
-
+  /// Bulk update reads the stored refill values and dispatches update events.
   Future<void> _bulkUpdateStock(BuildContext context) async {
     final itemSelectionCubit = context.read<ItemSelectionCubit>();
     final stockBloc = context.read<StockManagementBloc>();
@@ -237,31 +224,20 @@ class _RefillReportPageState extends State<RefillReportPage> {
     }
 
     for (final item in selectedItems) {
-      final newQuantity = itemSelectionCubit.state.quantities[item.itemName] ??
-          (item.maximumLevel - item.actualStock);
+      final double rawRefill =
+          itemSelectionCubit.state.quantities[item.itemName] ??
+              (item.maximumLevel - item.actualStock);
 
-      // Apply stored error percentage per item (skip if 0%)
-      final adjustedRefill = item.errorPercentage > 0
-          ? newQuantity * (1 + (item.errorPercentage / 100))
-          : newQuantity;
+      // Calculate new actual stock (raw refill is added to current actual).
+      final double newActualStock = item.actualStock + rawRefill;
+      final updatedItem = item.copyWith(actualStock: newActualStock);
 
-      // ✅ Convert to dot format before saving
-      final normalizedStock =
-          formatForSave((item.actualStock + adjustedRefill).toString());
-      final updatedStock = normalizedStock;
-
-      final updatedItem = item.copyWith(actualStock: updatedStock);
-
-      // ✅ Dispatch event to update stock in `StockManagementBloc`
-      stockBloc.add(UpdateStockItemEvent(updatedItem));
+      // Dispatch update event with the raw refill value.
+      stockBloc.add(UpdateStockItemEvent(updatedItem, rawRefill));
     }
 
-    // ✅ Clear selected items after dispatching update events
     itemSelectionCubit.clearSelection();
-
-    // ✅ Dispatch event to reload stock list
     stockBloc.add(LoadStockEvent());
-
     if (context.mounted) {
       _showSnackBar(context, 'Stock actualizado para los items seleccionados');
     }

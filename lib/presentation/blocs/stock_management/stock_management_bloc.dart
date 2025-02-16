@@ -37,21 +37,52 @@ class StockManagementBloc
 
   Future<void> _onUpdateStockItem(
       UpdateStockItemEvent event, Emitter<StockManagementState> emit) async {
-    if (state is StockLoaded) {
+    if (state is StockLoaded || state is StockUpdated) {
       final currentState = state as StockLoaded;
-
       try {
+        // Locate the old item in the list (using itemName as unique identifier).
+        final oldItem = currentState.stockItems.firstWhere(
+          (item) => item.itemName == event.updatedItem.itemName,
+        );
+
+        // Update the item in the repository.
         await stockRepository.updateStockItem(event.updatedItem);
 
+        // Compute the raw refill quantity:
+        // If a nonzero refillQuantity was provided, use it; otherwise, calculate the difference.
+        final double rawRefill = event.refillQuantity > 0
+            ? event.refillQuantity
+            : event.updatedItem.actualStock - oldItem.actualStock;
+
+        // Adjust the refill for history by adding the error percentage.
+        // For example, if rawRefill is 5 and errorPercentage is 10,
+        // then historyRefill = 5 * (1 + 10/100) = 5.5.
+        final double historyRefill =
+            rawRefill * (1 + (oldItem.errorPercentage / 100.0));
+
+        // Save refill history only if there's a positive refill.
+        if (historyRefill > 0) {
+          await stockRepository.saveRefillHistory(event.updatedItem.itemName,
+              historyRefill, event.updatedItem.errorPercentage.toDouble());
+        }
+
+        // Create a new list with the updated item.
         final updatedStock = currentState.stockItems.map((item) {
           return item.itemName == event.updatedItem.itemName
               ? event.updatedItem
               : item;
         }).toList();
 
+        // Emit a state to notify the UI about the updated item.
+        emit(StockUpdated(
+          stockItems: updatedStock,
+          updatedItem: event.updatedItem,
+        ));
+
+        // Re-emit the full loaded state to refresh the list.
         emit(StockLoaded(
-          updatedStock,
-          message: 'Stock updated successfully.',
+          List.from(updatedStock), // Force a new instance
+          message: '', // No extra message
           isSearchVisible: currentState.isSearchVisible,
           searchQuery: currentState.searchQuery,
         ));
