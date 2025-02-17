@@ -17,6 +17,7 @@ class StockManagementBloc
     on<LoadStockEvent>(_onLoadStock);
     on<UpdateStockItemEvent>(_onUpdateStockItem);
     on<DeleteAllStockEvent>(_onDeleteAllStock);
+    on<BulkUpdateStockEvent>(_onBulkUpdateStock);
   }
 
   Future<void> _onLoadStock(
@@ -88,6 +89,32 @@ class StockManagementBloc
         ));
       } catch (e) {
         emit(StockError('Error updating stock: ${e.toString()}'));
+      }
+    }
+  }
+  Future<void> _onBulkUpdateStock(
+      BulkUpdateStockEvent event, Emitter<StockManagementState> emit) async {
+    if (state is StockLoaded) {
+      final currentState = state as StockLoaded;
+      emit(StockUpdating(currentState.stockItems));
+
+      try {
+        // Update all items concurrently (if your repository supports it)
+        await Future.wait(event.updatedItems.map((item) async {
+          await stockRepository.updateStockItem(item);
+          // Optionally, update refill history here if needed.
+        }));
+        
+        // After bulk updates, fetch the updated stock from the repository.
+        final updatedStock = await stockRepository.getAllStockItems();
+        emit(StockLoaded(
+          List.from(updatedStock),
+          message: 'Bulk update successful.',
+          isSearchVisible: currentState.isSearchVisible,
+          searchQuery: currentState.searchQuery,
+        ));
+      } catch (e) {
+        emit(StockError('Bulk update error: ${e.toString()}'));
       }
     }
   }

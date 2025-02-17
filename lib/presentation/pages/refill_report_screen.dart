@@ -222,8 +222,19 @@ class _RefillReportPageState extends State<RefillReportPage> {
       _showSnackBar(context, 'No hay items seleccionados');
       return;
     }
-
+    final List<StockItem> updatedItems = [];
     for (final item in selectedItems) {
+      final double rawRefill =
+          itemSelectionCubit.state.quantities[item.itemName] ??
+              (item.maximumLevel - item.actualStock);
+
+      // Calculate new actual stock (raw refill is added to current actual).
+      final double newActualStock = item.actualStock + rawRefill;
+      final updatedItem = item.copyWith(actualStock: newActualStock);
+      updatedItems.add(updatedItem);
+    }
+
+    /*for (final item in selectedItems) {
       final double rawRefill =
           itemSelectionCubit.state.quantities[item.itemName] ??
               (item.maximumLevel - item.actualStock);
@@ -234,7 +245,10 @@ class _RefillReportPageState extends State<RefillReportPage> {
 
       // Dispatch update event with the raw refill value.
       stockBloc.add(UpdateStockItemEvent(updatedItem, rawRefill));
-    }
+    }*/
+
+    stockBloc.add(BulkUpdateStockEvent(updatedItems));
+    
 
     itemSelectionCubit.clearSelection();
     stockBloc.add(LoadStockEvent());

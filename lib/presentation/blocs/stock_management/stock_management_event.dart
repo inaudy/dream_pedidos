@@ -17,6 +17,22 @@ class UpdateStockItemEvent extends StockManagementEvent {
   @override
   List<Object> get props => [updatedItem, refillQuantity];
 }
+class BulkStockUpdating extends StockManagementState {
+  final List<StockItem> updatingItems;
+  const BulkStockUpdating(this.updatingItems);
+
+  @override
+  List<Object> get props => [updatingItems];
+}
+
+// New bulk update event:
+class BulkUpdateStockEvent extends StockManagementEvent {
+  final List<StockItem> updatedItems;
+  BulkUpdateStockEvent(this.updatedItems);
+  
+  @override
+  List<Object> get props => [updatedItems];
+}
 
 /// 🔹 Delete All Stock Items
 class DeleteAllStockEvent extends StockManagementEvent {}

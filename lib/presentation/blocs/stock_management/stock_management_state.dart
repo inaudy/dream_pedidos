@@ -17,16 +17,14 @@ class StockLoading extends StockManagementState {
   const StockLoading();
 }
 
-/// 🔹 Updating state (when editing a stock item)
 class StockUpdating extends StockManagementState {
-  final StockItem
-      updatingItem; // ✅ This allows UI to track the currently updating item
-
-  const StockUpdating(this.updatingItem);
+  final List<StockItem> updatingItems;
+  const StockUpdating(this.updatingItems);
 
   @override
-  List<Object> get props => [updatingItem];
+  List<Object> get props => [updatingItems];
 }
+
 
 /// 🔹 Updated state (when a single item updates)
 class StockUpdated extends StockManagementState {
