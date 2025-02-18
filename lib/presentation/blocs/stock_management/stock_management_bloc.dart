@@ -92,23 +92,44 @@ class StockManagementBloc
       }
     }
   }
+
   Future<void> _onBulkUpdateStock(
       BulkUpdateStockEvent event, Emitter<StockManagementState> emit) async {
     if (state is StockLoaded) {
       final currentState = state as StockLoaded;
-      emit(StockUpdating(currentState.stockItems));
-
       try {
-        // Update all items concurrently (if your repository supports it)
+        // Process each updated item concurrently.
         await Future.wait(event.updatedItems.map((item) async {
+          final double rawRefill = event.refillMap[item.itemName] ?? 0;
+          // Update the item in the repository.
           await stockRepository.updateStockItem(item);
-          // Optionally, update refill history here if needed.
+          // Compute adjusted refill for history:
+          final double adjustedRefill =
+              rawRefill * (1 + (item.errorPercentage / 100.0));
+          // Save refill history if there's a positive refill.
+          if (rawRefill > 0) {
+            await stockRepository.saveRefillHistory(
+              item.itemName,
+              adjustedRefill,
+              item.errorPercentage.toDouble(),
+            );
+          }
         }));
-        
-        // After bulk updates, fetch the updated stock from the repository.
-        final updatedStock = await stockRepository.getAllStockItems();
+
+        // Now update the master list in memory.
+        final updatedStock = currentState.stockItems.map((item) {
+          if (event.refillMap.containsKey(item.itemName)) {
+            // Replace with the updated version from the event.
+            return event.updatedItems.firstWhere(
+                (updated) => updated.itemName == item.itemName,
+                orElse: () => item);
+          }
+          return item;
+        }).toList();
+
+        // Emit the full updated master list.
         emit(StockLoaded(
-          List.from(updatedStock),
+          updatedStock,
           message: 'Bulk update successful.',
           isSearchVisible: currentState.isSearchVisible,
           searchQuery: currentState.searchQuery,

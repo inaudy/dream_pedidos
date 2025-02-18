@@ -5,10 +5,10 @@ class EAN13ScannerPage extends StatefulWidget {
   const EAN13ScannerPage({super.key});
 
   @override
-  _EAN13ScannerPageState createState() => _EAN13ScannerPageState();
+  EAN13ScannerPageState createState() => EAN13ScannerPageState();
 }
 
-class _EAN13ScannerPageState extends State<EAN13ScannerPage> {
+class EAN13ScannerPageState extends State<EAN13ScannerPage> {
   bool _isScanned = false;
   late final MobileScannerController _controller;
 
@@ -66,6 +66,7 @@ class _EAN13ScannerPageState extends State<EAN13ScannerPage> {
                   // Brief delay to let the user see that the scan was successful,
                   // then pop the page with the scanned code.
                   Future.delayed(const Duration(milliseconds: 500), () {
+                    if (!context.mounted) return;
                     Navigator.of(context).pop(code);
                   });
                 }

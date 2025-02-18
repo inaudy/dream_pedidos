@@ -8,12 +8,12 @@ class EditValueDialog extends StatefulWidget {
   final void Function(double newValue) onSave;
 
   const EditValueDialog({
-    Key? key,
+    super.key,
     required this.title,
     required this.labelText,
     required this.initialValue,
     required this.onSave,
-  }) : super(key: key);
+  });
 
   /// Call this static method to show the dialog.
   static Future<void> show(

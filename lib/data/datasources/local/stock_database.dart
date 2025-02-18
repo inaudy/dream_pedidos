@@ -131,20 +131,6 @@ class StockDatabase implements StockRepository {
   }
 
   @override
-  Future<void> printAllStockItems() async {
-    final db = await database;
-    final result = await db.query('stock');
-
-    if (result.isEmpty) {
-      print('No data found in stock.');
-    } else {
-      for (var row in result) {
-        print(row);
-      }
-    }
-  }
-
-  @override
   Future<void> addStockItems(List<StockItem> items) async {
     final db = await database;
     final batch = db.batch();

@@ -212,7 +212,6 @@ class _RefillReportPageState extends State<RefillReportPage> {
     );
   }
 
-  /// Bulk update reads the stored refill values and dispatches update events.
   Future<void> _bulkUpdateStock(BuildContext context) async {
     final itemSelectionCubit = context.read<ItemSelectionCubit>();
     final stockBloc = context.read<StockManagementBloc>();
@@ -222,38 +221,30 @@ class _RefillReportPageState extends State<RefillReportPage> {
       _showSnackBar(context, 'No hay items seleccionados');
       return;
     }
+
+    final Map<String, double> refillMap = {};
     final List<StockItem> updatedItems = [];
     for (final item in selectedItems) {
+      // Retrieve the raw refill value (from the cubit or computed as (max - actual)).
       final double rawRefill =
           itemSelectionCubit.state.quantities[item.itemName] ??
               (item.maximumLevel - item.actualStock);
-
-      // Calculate new actual stock (raw refill is added to current actual).
+      refillMap[item.itemName] = rawRefill;
+      // Calculate the new actual stock.
       final double newActualStock = item.actualStock + rawRefill;
       final updatedItem = item.copyWith(actualStock: newActualStock);
       updatedItems.add(updatedItem);
     }
 
-    /*for (final item in selectedItems) {
-      final double rawRefill =
-          itemSelectionCubit.state.quantities[item.itemName] ??
-              (item.maximumLevel - item.actualStock);
+    // Dispatch the bulk update event with the updated items and refill map.
+    stockBloc.add(BulkUpdateStockEvent(updatedItems, refillMap));
 
-      // Calculate new actual stock (raw refill is added to current actual).
-      final double newActualStock = item.actualStock + rawRefill;
-      final updatedItem = item.copyWith(actualStock: newActualStock);
-
-      // Dispatch update event with the raw refill value.
-      stockBloc.add(UpdateStockItemEvent(updatedItem, rawRefill));
-    }*/
-
-    stockBloc.add(BulkUpdateStockEvent(updatedItems));
-    
-
+    // Clear selected items.
     itemSelectionCubit.clearSelection();
-    stockBloc.add(LoadStockEvent());
+
+    // Do not reload the entire list; the bulk update event handler already emits a state with the updated list.
     if (context.mounted) {
-      _showSnackBar(context, 'Stock actualizado para los items seleccionados');
+      //_showSnackBar(context, 'Stock actualizado para los items seleccionados');
     }
   }
 

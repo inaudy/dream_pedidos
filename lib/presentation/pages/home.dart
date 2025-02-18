@@ -110,6 +110,8 @@ class HomePage extends StatelessWidget {
                         );
 
                         if (scannedCode != null && scannedCode is String) {
+                          if (!context.mounted)
+                            return; // Prevent calling setState on unmounted widget.
                           final stockState =
                               context.read<StockManagementBloc>().state;
                           if (stockState is StockLoaded) {
@@ -187,7 +189,9 @@ class HomePage extends StatelessWidget {
 
                       try {
                         await PdfService.sendEmailWithPdf(
-                            filteredStockItems, "$posName");
+                            filteredStockItems, posName);
+                        if (!context.mounted)
+                          return; // Prevent calling setState on unmounted widget.
                         _showSnackBar(context, '✅ Correo enviado con éxito.');
                       } catch (e) {
                         _showSnackBar(
@@ -271,37 +275,6 @@ class HomePage extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  List<Widget> _buildPosList(BuildContext context) {
-    final posOptions = [
-      {
-        "title": "Restaurante",
-        "pos": PosType.restaurant,
-        "icon": Icons.restaurant,
-      },
-      {
-        "title": "Beach Club",
-        "pos": PosType.beachClub,
-        "icon": Icons.beach_access,
-      },
-      {
-        "title": "Bar Hall",
-        "pos": PosType.bar,
-        "icon": Icons.local_bar,
-      },
-    ];
-
-    return posOptions.map((option) {
-      return ListTile(
-        leading: Icon(option["icon"] as IconData),
-        title: Text(option["title"] as String),
-        onTap: () {
-          context.read<PosSelectionCubit>().selectPos(option["pos"] as PosType);
-          Navigator.of(context).pop();
-        },
-      );
-    }).toList();
   }
 
   Widget _buildDrawerHeader() {

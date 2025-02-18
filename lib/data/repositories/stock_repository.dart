@@ -17,9 +17,6 @@ abstract class StockRepository {
   /// Resets the stock table from the backup data source
   Future<void> resetStockFromBackup();
 
-  /// Debugging: Prints all stock items in the data source
-  Future<void> printAllStockItems();
-
   Future<List<RefillHistoryItem>> getRefillHistory();
   Future<void> revertRefill(int refillId);
   Future<void> saveRefillHistory(

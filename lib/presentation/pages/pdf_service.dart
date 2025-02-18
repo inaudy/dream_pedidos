@@ -24,7 +24,7 @@ class PdfService {
     final categorizedData = _categorizeStockItems(stockItems);
     pdf.addPage(
       pw.MultiPage(
-        margin: pw.EdgeInsets.all(25),
+        margin: const pw.EdgeInsets.all(25),
         pageFormat: PdfPageFormat.a4,
         // ✅ Minimized margins
         build: (pw.Context context) {
@@ -59,9 +59,10 @@ class PdfService {
               border: pw.TableBorder.all(
                   width: 0.5, color: PdfColors.black), // ✅ Uniform Borders
               columnWidths: {
-                0: pw.FlexColumnWidth(2), // ✅ Make "Producto" column wider
-                1: pw.FlexColumnWidth(1), // ✅ Keep "Reponer" smaller
-                2: pw.FlexColumnWidth(1), // ✅ "Enviado" column width
+                0: const pw.FlexColumnWidth(
+                    2), // ✅ Make "Producto" column wider
+                1: const pw.FlexColumnWidth(1), // ✅ Keep "Reponer" smaller
+                2: const pw.FlexColumnWidth(1), // ✅ "Enviado" column width
               },
               children: tableData.map((row) {
                 final isHeader = row[0] == "Producto";
@@ -69,7 +70,7 @@ class PdfService {
 
                 return pw.TableRow(
                   decoration: isCategory
-                      ? pw.BoxDecoration(
+                      ? const pw.BoxDecoration(
                           color: PdfColors.grey300) // ✅ Category Background
                       : null,
                   children: row.map((cell) {
@@ -95,34 +96,9 @@ class PdfService {
     return pdf.save();
   }
 
-  static pw.Widget _buildStockTable(List<StockItem> stockItems) {
-    return pw.TableHelper.fromTextArray(
-      border: pw.TableBorder.all(width: 0.5, color: PdfColors.black),
-      headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-      cellStyle: pw.TextStyle(fontSize: 9),
-      cellPadding: const pw.EdgeInsets.symmetric(
-          vertical: 2, horizontal: 2), // ✅ Reduce cell padding
-
-      cellAlignments: {
-        1: pw.Alignment.center, // Center "Reponer"
-      },
-
-      data: stockItems.map((item) {
-        final double refillQuantity =
-            (item.maximumLevel - item.actualStock).clamp(0, item.maximumLevel);
-        return [
-          item.itemName.isNotEmpty ? item.itemName : "Desconocido",
-          formatForDisplay(refillQuantity),
-          "", // Placeholder to avoid empty columns
-        ];
-      }).toList(),
-    );
-  }
-
   static pw.Widget _tableCell(String text, {bool bold = false}) {
     return pw.Container(
-      padding: pw.EdgeInsets.symmetric(
+      padding: const pw.EdgeInsets.symmetric(
           vertical: 4, horizontal: 2), // ✅ Consistent Padding
       alignment: pw.Alignment.centerLeft, // ✅ Keep alignment consistent
       child: pw.Text(
@@ -165,7 +141,7 @@ class PdfService {
       final smtpServer = gmail(senderEmail, appPassword);
 
       final message = Message()
-        ..from = Address(senderEmail, "Pedidos App")
+        ..from = const Address(senderEmail, "Pedidos App")
         ..recipients.add(recipientEmail)
         ..subject =
             "Pedidos del $posName ${DateFormat('dd/MM/yy').format(DateTime.now())}"
@@ -182,7 +158,7 @@ class PdfService {
         await tempFile.delete();
       }
     } catch (e) {
-      print("❌ Error sending email: $e");
+      return;
     }
   }
 }
