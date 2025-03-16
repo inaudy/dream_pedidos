@@ -1,7 +1,8 @@
 import 'package:dream_pedidos/data/models/stock_item.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:dream_pedidos/presentation/cubit/stock_search_cubit.dart';
-import 'package:dream_pedidos/presentation/widgets/stock_edit_dialog.dart';
+import 'package:dream_pedidos/presentation/widgets/refill_edit_dialog.dart';
+import 'package:dream_pedidos/presentation/widgets/stock_edit_dialo.dart';
 import 'package:dream_pedidos/utils/format_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -153,15 +154,19 @@ class _StockManagePageState extends State<StockManagePage> {
               SlidableAction(
                 onPressed: (_) {
                   // Use the generic dialog to update actual stock.
-                  EditValueDialog.show(
+                  EditStockDialog.show(
                     context,
-                    title: updatedItem.itemName,
-                    labelText: 'Actual Stock',
-                    initialValue: updatedItem.actualStock,
-                    onSave: (newActualStock) {
-                      // Create an updated item with the new stock.
-                      final newItem =
-                          updatedItem.copyWith(actualStock: newActualStock);
+                    title: 'Editar  ${updatedItem.itemName}',
+                    initialActualStock: updatedItem.actualStock,
+                    initialMin: updatedItem.minimumLevel,
+                    initialMax: updatedItem.maximumLevel,
+                    onSave: (newActualStock, newMin, newMax) {
+                      // Create an updated item with the new values.
+                      final newItem = updatedItem.copyWith(
+                        actualStock: newActualStock,
+                        minimumLevel: newMin,
+                        maximumLevel: newMax,
+                      );
                       // Dispatch update event (refillQuantity is 0 in this case).
                       context
                           .read<StockManagementBloc>()
@@ -188,7 +193,9 @@ class _StockManagePageState extends State<StockManagePage> {
                     const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               subtitle: Text(
-                'Mín: ${formatForDisplay(updatedItem.minimumLevel)} | Máx: ${formatForDisplay(updatedItem.maximumLevel)} | Traspaso: ${updatedItem.traspaso}',
+                updatedItem.traspaso.toString() != 'null'
+                    ? 'Mín: ${formatForDisplay(updatedItem.minimumLevel)} | Máx: ${formatForDisplay(updatedItem.maximumLevel)} | Traspaso: ${updatedItem.traspaso}'
+                    : 'Mín: ${formatForDisplay(updatedItem.minimumLevel)} | Máx: ${formatForDisplay(updatedItem.maximumLevel)}',
               ),
               leading: Text(
                 formatForDisplay(

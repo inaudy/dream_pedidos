@@ -33,6 +33,9 @@ dependencies:
   http: ^1.3.0 
   mailer: ^6.4.1
   path_provider: ^2.1.5
+  sqlite3_flutter_libs: ^0.5.30
+  sqflite_common_ffi: ^2.3.4+4
+  permission_handler: ^11.4.0
 
 dev_dependencies:
   flutter_test:

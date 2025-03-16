@@ -9,13 +9,14 @@ import 'package:dream_pedidos/presentation/pages/pos_selection_page.dart';
 import 'package:dream_pedidos/presentation/pages/refill_history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dream_pedidos/presentation/widgets/stock_edit_dialog.dart';
+import 'package:dream_pedidos/presentation/widgets/refill_edit_dialog.dart';
 import 'package:dream_pedidos/presentation/cubit/bottom_nav_cubit.dart';
 import 'package:dream_pedidos/presentation/pages/config.dart';
 import 'package:dream_pedidos/presentation/pages/refill_report_screen.dart';
 import 'package:dream_pedidos/presentation/pages/stock_screen.dart';
 import 'package:dream_pedidos/presentation/pages/upload_sales_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:dream_pedidos/data/repositories/excel_service.dart';
 
 class HomePage extends StatelessWidget {
   final StockRepository stockRepository;
@@ -44,7 +45,6 @@ class HomePage extends StatelessWidget {
             );
           },
         ),
-        // Combine the page title and the selected POS in a Column.
         title: BlocBuilder<BottomNavcubit, int>(
           builder: (context, navState) {
             final List<String> appBarsTitle = [
@@ -156,6 +156,47 @@ class HomePage extends StatelessWidget {
                                 ),
                               );
                             }
+                          }
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.email, color: Colors.white),
+                      tooltip: "Enviar Excel",
+                      onPressed: () async {
+                        final stockState =
+                            context.read<StockManagementBloc>().state;
+                        final posState =
+                            context.read<PosSelectionCubit>().state;
+                        final posName = posState.name;
+
+                        if (stockState is StockLoaded) {
+                          // Apply the same filter as before to get only items that need refilling.
+                          final filteredStockItems =
+                              stockState.stockItems.where((item) {
+                            return item.actualStock <= item.minimumLevel &&
+                                !(item.actualStock == item.minimumLevel &&
+                                    item.minimumLevel == item.maximumLevel);
+                          }).toList();
+
+                          if (filteredStockItems.isEmpty) {
+                            _showSnackBar(context,
+                                '⚠️ No hay productos para generar el Excel');
+                            return;
+                          }
+
+                          _showSnackBar(
+                              context, '📤 Enviando Excel por correo...');
+
+                          try {
+                            await ExcelService.sendEmailWithExcelFromDB(
+                                stockRepository, posName);
+                            if (!context.mounted) return;
+                            _showSnackBar(
+                                context, '✅ Correo enviado con éxito.');
+                          } catch (e) {
+                            _showSnackBar(
+                                context, '❌ Error al enviar el correo: $e');
                           }
                         }
                       },

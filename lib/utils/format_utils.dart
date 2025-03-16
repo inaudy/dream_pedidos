@@ -4,7 +4,7 @@ String formatForDisplay(double value) {
   if (value % 1 == 0) {
     return NumberFormat('#,##0', 'es_ES').format(value);
   } else {
-    return NumberFormat('#,##0.0', 'es_ES').format(value);
+    return NumberFormat('#,##0.##', 'es_ES').format(value);
   }
 }
 

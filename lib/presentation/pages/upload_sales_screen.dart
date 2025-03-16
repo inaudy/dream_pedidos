@@ -10,8 +10,10 @@ class UploadSalesPage extends StatelessWidget {
   const UploadSalesPage({super.key});
 
   void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      duration: const Duration(seconds: 8),
+    ));
   }
 
   @override
@@ -60,7 +62,7 @@ class UploadSalesPage extends StatelessWidget {
     }
 
     if (salesState is SalesParserSuccess && salesState.salesData.isNotEmpty) {
-      context.read<StockSyncBloc>().add(SyncStockEvent(salesState.salesData));
+      context.read<StockSyncBloc>().add(SyncStockEvent(salesState.converted));
     } else {
       _showSnackBar(context, 'Error, datos no válidos.');
     }
@@ -121,7 +123,7 @@ class UploadSalesPage extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             subtitle: Text(
-              'Ventas: ${data.salesVolume.toInt()}\nFecha: ${DateFormat('dd/MM/yyyy').format(data.date)}',
+              'Ventas: ${data.salesVolume.toInt()}\nFecha: ${DateFormat('dd/MM/yyyy HH:mm').format(data.date)}',
               style: const TextStyle(fontSize: 12),
             ),
           ),

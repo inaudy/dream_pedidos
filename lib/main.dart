@@ -12,6 +12,8 @@ import 'package:dream_pedidos/presentation/pages/home.dart';
 import 'package:dream_pedidos/data/datasources/local/recipe_database.dart';
 import 'package:dream_pedidos/data/datasources/local/stock_database.dart';
 import 'package:dream_pedidos/presentation/pages/pos_selection_page.dart';
+//import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Import FFI SQLite
+// Import SQLite3 FFI
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -47,6 +49,9 @@ RecipeDatabase createRecipeDatabaseForPos(PosType pos) {
 }
 
 void main() {
+  // ✅ Initialize FFI SQLite for Windows, macOS, and Linux
+  //sqfliteFfiInit();
+  //databaseFactory = databaseFactoryFfi;
   runApp(
     BlocProvider(
       create: (_) => PosSelectionCubit(),
@@ -54,7 +59,7 @@ void main() {
         debugShowCheckedModeBanner: false,
         title: 'Pedidos Tigotan',
         theme: ThemeData(primarySwatch: Colors.red),
-        home: const PosSelectionPage(), // Start with the POS selection screen
+        home: const PosSelectionPage(),
       ),
     ),
   );
@@ -73,7 +78,6 @@ class MyApp extends StatelessWidget {
         return MultiBlocProvider(
           key: ValueKey(pos),
           providers: [
-            // Create the POS-dependent StockManagementBloc.
             BlocProvider<StockManagementBloc>(
               create: (context) {
                 final bloc = StockManagementBloc(repository, posKey: pos.name);
@@ -81,14 +85,14 @@ class MyApp extends StatelessWidget {
                 return bloc;
               },
             ),
-            // POS-dependent FileStockBloc.
+
             BlocProvider<FileStockBloc>(
               create: (context) {
                 return FileStockBloc(
                     repository, context.read<StockManagementBloc>());
               },
             ),
-            // POS-dependent StockSyncBloc.
+
             BlocProvider<StockSyncBloc>(
               create: (context) {
                 return StockSyncBloc(
@@ -110,7 +114,8 @@ class MyApp extends StatelessWidget {
                   RecipeDatabase(dbName: recipeDatabase.dbName)),
             ),
             BlocProvider<SalesParserBloc>(
-              create: (context) => SalesParserBloc(),
+              create: (context) => SalesParserBloc(
+                  context.read<PosSelectionCubit>(), recipeDatabase),
             ),
             BlocProvider<BottomNavcubit>(
               create: (_) => BottomNavcubit(),

@@ -47,15 +47,19 @@ class RecipeDatabase implements CocktailRecipeRepository {
   @override
   Future<void> addCocktailRecipes(List<CocktailRecipe> recipes) async {
     final db = await database;
-    final batch = db.batch();
-    for (final recipe in recipes) {
-      batch.insert(
-        'cocktail_recipes',
-        recipe.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-    await batch.commit(noResult: true);
+    await db.transaction((txn) async {
+      // Delete all existing records from the table.
+      await txn.delete('cocktail_recipes');
+      // Create a batch for the insert operations.
+      final batch = txn.batch();
+      for (final recipe in recipes) {
+        batch.insert(
+          'cocktail_recipes',
+          recipe.toMap(),
+        );
+      }
+      await batch.commit(noResult: true);
+    });
   }
 
   @override

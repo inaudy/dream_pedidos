@@ -11,11 +11,12 @@ class SalesParserLoading extends SalesParserState {}
 
 class SalesParserSuccess extends SalesParserState {
   final List<SalesData> salesData;
+  final List<SalesData> converted;
 
-  SalesParserSuccess(this.salesData);
+  SalesParserSuccess({required this.salesData, required this.converted});
 
   @override
-  List<Object?> get props => [salesData];
+  List<Object?> get props => [salesData, converted];
 }
 
 class SalesParserFailure extends SalesParserState {

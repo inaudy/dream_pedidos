@@ -61,6 +61,15 @@ class StockDatabase implements StockRepository {
     );
   }
 
+  Future<void> printAllStockItems() async {
+    final stockItems = await getAllStockItems();
+    print("---- Stock Table ----");
+    for (var item in stockItems) {
+      // Adjust the properties according to your StockItem model.
+      print("Name: ${item.itemName}, Actual Stock: ${item.actualStock}, ");
+    }
+  }
+
   @override
   Future<void> resetStockFromBackup() async {
     final db = await database;
@@ -193,6 +202,43 @@ class StockDatabase implements StockRepository {
       await batch.commit(noResult: true);
     });
   }
+
+  /*@override
+  Future<void> bulkUpdateStock(List<Map<String, dynamic>> salesData) async {
+    final db = await database;
+
+    // Aggregate sales data by item name
+    final Map<String, double> aggregatedData = {};
+
+    for (final sale in salesData) {
+      final itemName = sale['item_name'];
+      final volume = sale['sales_volume'];
+
+      if (aggregatedData.containsKey(itemName)) {
+        aggregatedData[itemName] = aggregatedData[itemName]! + volume;
+      } else {
+        aggregatedData[itemName] = volume;
+      }
+    }
+
+    // Run the batch update with aggregated data
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      aggregatedData.forEach((itemName, totalVolume) {
+        print('Updating $itemName with volume $totalVolume');
+        batch.rawUpdate(
+          '''
+        UPDATE stock
+        SET actual_stock = actual_stock - ?
+        WHERE item_name = ?
+        ''',
+          [totalVolume, itemName],
+        );
+      });
+
+      await batch.commit(noResult: true);
+    });
+  }*/
 
   @override
   Future<int> updateStockItem(StockItem item) async {

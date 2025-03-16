@@ -9,7 +9,6 @@ class SalesParserPickFileEvent extends SalesParserEvent {}
 
 class SalesParserUploadEvent extends SalesParserEvent {
   final String filePath;
-
   SalesParserUploadEvent(this.filePath);
   @override
   List<Object?> get props => [filePath];

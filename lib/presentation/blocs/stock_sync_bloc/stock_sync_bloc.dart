@@ -1,3 +1,4 @@
+import 'package:dream_pedidos/data/repositories/excel_service.dart';
 import 'package:dream_pedidos/presentation/blocs/stock_management/stock_management_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,13 +12,13 @@ import 'package:dream_pedidos/data/repositories/recipe_repository.dart'; // Reci
 part 'stock_sync_event.dart';
 part 'stock_sync_state.dart';
 
-/// This bloc now also receives a recipe repository to apply conversion factors.
-/// For each sale, it will look up all recipe rows, and for each row update the stock for that ingredient.
+/// Este bloc recibe además un recipe repository para aplicar factores de conversión.
+/// Para cada venta, busca las filas de recetas correspondientes y actualiza el stock de cada ingrediente.
 class StockSyncBloc extends Bloc<SyncStockEvent, StockSyncState> {
   final StockRepository stockRepository;
   final StockManagementBloc _stockManagementBloc;
-  final String posKey; // e.g., "restaurant", "bar", or "beachClub"
-  final CocktailRecipeRepository recipeRepository; // New dependency
+  final String posKey; // e.g., "restaurant", "bar", o "beachClub"
+  final CocktailRecipeRepository recipeRepository; // Nueva dependencia
 
   StockSyncBloc(
     this.stockRepository,
@@ -30,38 +31,66 @@ class StockSyncBloc extends Bloc<SyncStockEvent, StockSyncState> {
 
   Future<void> _onSyncStock(
       SyncStockEvent event, Emitter<StockSyncState> emit) async {
-    emit(StockSyncLoading()); // Show loading
+    emit(StockSyncLoading());
 
     try {
-      // Get sales date from first sales entry.
-      final DateTime salesDate = event.salesData.first.date;
+      bool alreadySynced = false;
+      DateTime syncReferenceDate;
+      List<Map<String, dynamic>> updatedSalesData = [];
 
-      // Check if this sales date was already synced for this POS.
-      final bool alreadySynced = await _isAlreadySynced(salesDate);
-      if (alreadySynced) {
-        emit(StockSyncError(
-            "Error: Almacén ya actualizado con ventas del ${DateFormat('dd/MM/yyyy').format(salesDate)}"));
-        return;
-      }
+      if (posKey == 'Beach Club') {
+        final now = DateTime.now();
+        // Se normaliza la fecha de hoy (sin componente horario)
+        final normalizedToday = DateTime(now.year, now.month, now.day);
+        syncReferenceDate = normalizedToday;
 
-      // Create a list to hold all stock updates.
-      final List<Map<String, dynamic>> updatedSalesData = [];
+        alreadySynced = await _isAlreadySynced(syncReferenceDate);
+        if (alreadySynced) {
+          emit(StockSyncError(
+              "Error: Almacén ya actualizado para la fecha ${DateFormat('dd/MM/yyyy').format(syncReferenceDate)}"));
+          return;
+        }
 
-      // For each sale record, check for conversion recipes.
-      for (final sale in event.salesData) {
-        // Get all recipe rows for the sale item.
-        final recipes =
-            await recipeRepository.getIngredientsByCocktail(sale.itemName);
-        if (recipes.isNotEmpty) {
-          // For each conversion row, calculate the deduction.
-          for (final recipe in recipes) {
-            updatedSalesData.add({
-              'item_name': recipe.ingredientName, // stock item to update
-              'sales_volume': sale.salesVolume * recipe.quantity,
-            });
-          }
-        } else {
-          // No conversion found: fallback to a 1:1 conversion for the sale item.
+        // Como el SalesParserBloc ya filtra el período, se procesa directamente la data.
+        for (final sale in event.salesData) {
+          updatedSalesData.add({
+            'item_name': sale.itemName,
+            'sales_volume': sale.salesVolume,
+          });
+        }
+      } else if (posKey == 'restaurant') {
+        // Se asume que la lista ya está filtrada para las ventas de ayer.
+        // Se guarda la fecha de ayer normalizada para evitar duplicados.
+        final yesterday = DateTime.now().subtract(const Duration(days: 1));
+        final normalizedYesterday =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+        syncReferenceDate = normalizedYesterday;
+
+        alreadySynced = await _isAlreadySynced(syncReferenceDate);
+        if (alreadySynced) {
+          emit(StockSyncError(
+              "Error: Almacén ya actualizado para la fecha ${DateFormat('dd/MM/yyyy').format(syncReferenceDate)}"));
+          return;
+        }
+
+        for (final sale in event.salesData) {
+          updatedSalesData.add({
+            'item_name': sale.itemName,
+            'sales_volume': sale.salesVolume,
+          });
+        }
+      } else {
+        // Caso por defecto para otros POS (se puede ajustar si es necesario)
+        syncReferenceDate = event.salesData.first.date;
+        alreadySynced = await _isAlreadySynced(syncReferenceDate);
+
+        if (alreadySynced) {
+          emit(StockSyncError(
+              "Error: Almacén ya actualizado para la ${DateFormat('dd/MM/yyyy').format(syncReferenceDate)}"));
+          return;
+        }
+
+        for (final sale in event.salesData) {
           updatedSalesData.add({
             'item_name': sale.itemName,
             'sales_volume': sale.salesVolume,
@@ -69,32 +98,38 @@ class StockSyncBloc extends Bloc<SyncStockEvent, StockSyncState> {
         }
       }
 
-      // Perform stock update using the aggregated conversion data.
+      await ExcelService.sendEmailWithExcelFromDB(stockRepository, posKey);
+      // Realiza la actualización del stock
       await stockRepository.bulkUpdateStock(updatedSalesData);
-
-      // Save last sync date (specific to this POS).
-      await _saveLastSyncDate(salesDate);
+      _stockManagementBloc.add(LoadStockEvent());
+      // Guarda la fecha de sincronización
+      await _saveLastSyncDate(syncReferenceDate);
 
       emit(StockSyncSuccess());
-      _stockManagementBloc.add(LoadStockEvent());
     } catch (error) {
       emit(StockSyncError('Error al sincronizar stock: ${error.toString()}'));
     }
   }
 
-  /// Saves the last sync date in SharedPreferences using a key specific to the POS.
+  /// Guarda la última fecha de sincronización en SharedPreferences usando una llave específica para el POS.
   Future<void> _saveLastSyncDate(DateTime salesDate) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         'last_sync_date_$posKey', salesDate.toIso8601String());
   }
 
-  /// Checks if the sales data for the given date is already synced for this POS.
+  /// Verifica si los datos de venta para la fecha dada ya fueron sincronizados para este POS.
   Future<bool> _isAlreadySynced(DateTime salesDate) async {
     final prefs = await SharedPreferences.getInstance();
     final lastSyncString = prefs.getString('last_sync_date_$posKey');
-    if (lastSyncString == null) return false; // No sync yet.
+    if (lastSyncString == null) return false; // Aún no se ha sincronizado.
     final lastSyncDate = DateTime.parse(lastSyncString);
-    return DateUtils.isSameDay(lastSyncDate, salesDate);
+    if (posKey == 'restaurant') {
+      return DateUtils.isSameDay(lastSyncDate, salesDate);
+    } else {
+      return posKey == 'beachClub'
+          ? lastSyncDate.isAtSameMomentAs(salesDate)
+          : DateUtils.isSameDay(lastSyncDate, salesDate);
+    }
   }
 }
